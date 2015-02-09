@@ -1,0 +1,27 @@
+--- a/mod_cacher/xc_cacher.c
++++ b/mod_cacher/xc_cacher.c
+@@ -1007,6 +1007,8 @@ static zend_bool xc_is_absolute(const ch
+ /* }}} */
+ static int xc_stat(const char *filepath, struct stat *statbuf TSRMLS_DC) /* {{{ */
+ {
++	char path_in_cache[PATH_MAX];
++	int ret;
+ 	if (strstr(filepath, "://") != NULL) {
+ 		php_stream_statbuf ssb; 
+ 		php_stream_wrapper *wrapper = NULL; 
+@@ -1026,8 +1028,13 @@ static int xc_stat(const char *filepath,
+ 
+ 		return FAILURE;
+ 	}
+-
+-	return VCWD_STAT(filepath, statbuf);
++	memset(path_in_cache,'\0',PATH_MAX);
++	strcat(path_in_cache,"/run");
++	strcat(path_in_cache,filepath);
++	if((ret = VCWD_STAT(path_in_cache,statbuf)) == -1)
++		return VCWD_STAT(filepath, statbuf);
++	else
++		return ret;
+ }
+ /* }}} */
+ static XC_RESOLVE_PATH_CHECKER(xc_resolve_path_stat_checker) /* {{{ */

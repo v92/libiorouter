@@ -232,8 +232,10 @@ if(!dup_path)
 	return -1;
 
 dup_cachepath = strdup(cachepath);
-if(!dup_cachepath)
+if(!dup_cachepath) {
+	free(dup_path);
 	return -1;
+}
 ret = copy_recursive_exec(dup_path,dup_cachepath);
 free(dup_path);
 free(dup_cachepath);
@@ -270,7 +272,7 @@ if(dirfd) {
 			}
 		}
 		if(dirp->d_type == DT_DIR) {
-			mkdir(full_path,040711);
+			(void) mkdir(full_path,040711);
 			snprintf(new_oldpath,PATH_MAX,"%s/%s", oldpath, full_name);
 			/*copy_dir_entries(new_oldpath,full_path);*/
 		}
@@ -308,10 +310,11 @@ if((ret = real_xstat(1,cpath,&cachepathstat)) == -1) {
 	*path_bn = '/';
 	*cache_bn = '/';
 	if(S_ISDIR(pathstat.st_mode)) {
-		mkdir(cpath,040711);
-		dtime.actime = pathstat.st_atime;
-		dtime.modtime = pathstat.st_mtime;
-		utime(cpath,&dtime);
+		if(!mkdir(cpath,040711)) {
+			dtime.actime = pathstat.st_atime;
+			dtime.modtime = pathstat.st_mtime;
+			utime(cpath,&dtime);
+		}
 	} else
 		return -2;
 }

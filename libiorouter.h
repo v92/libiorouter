@@ -37,9 +37,9 @@
 	gettimeofday(&sec,NULL); \
 	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
 	if(stats_socket_fd != -1 && (log_attr & L_STATS)) \
-		send(stats_socket_fd, msg, n_msg, 0); \
+		(void) send(stats_socket_fd, msg, n_msg, 0); \
 	if(logfile_fd != -1 && (log_attr & L_JOURNAL)) \
-		write(logfile_fd,msg,n_msg); \
+		(void) write(logfile_fd,msg,n_msg); \
 	}
 
 /*int (*real_fchownat)(int dirfd, const char *path, uid_t owner, gid_t group, int flags);j

@@ -224,10 +224,16 @@ return spath.st_uid;
 
 int copy_recursive_dirs(const char *oldpath, const char *cachepath)
 {
-char *dup_path = strdup(oldpath);
-char *dup_cachepath = strdup(cachepath);
+char *dup_path = NULL;
+char *dup_cachepath = NULL;
 int ret = 0;
-if(!dup_path || !dup_cachepath)
+
+dup_path = strdup(oldpath);
+if(!dup_path)
+	return -1;
+
+dup_cachepath = strdup(cachepath);
+if(!dup_cachepath)
 	return -1;
 ret = copy_recursive_exec(dup_path,dup_cachepath);
 free(dup_path);

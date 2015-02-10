@@ -52,7 +52,7 @@ void reread_conf(int signum);
 void read_conf_file(char *logserver);
 void init_log_socket(char *logserver);
 char *normalize_path(const char * , size_t);
-char *libio_realpath(const char *, size_t);
+char *libio_realpath(const char *);
 char *libio_realpath_chk(const char *, char *, size_t);
 void copy_entry(const char *oldpath,int oldfd,const struct stat *oldstat, const char *cachepath);
 void create_whiteout(char *wpath);

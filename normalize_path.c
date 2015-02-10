@@ -25,16 +25,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <limits.h>
 
 /* lstat-less realpath version */
-char * normalize_path(const char * src, size_t src_len) {
+char * normalize_path(const char * src) {
 
         char * res;
         size_t res_len;
-
+        size_t src_len = strlen(src);
+	
         const char * ptr = src;
         const char * end = &src[src_len];
         const char * next;
+	
+	if(!src)	
+		return NULL;
 
-        if (src_len == 0 || src[0] != '/') {
+        if (src[0] != '/') {
 
                 /* relative path */
 
@@ -92,10 +96,10 @@ char * normalize_path(const char * src, size_t src_len) {
         return res;
 }
 
-char *libio_realpath(const char * src, size_t src_len)
+char *libio_realpath(const char * src)
 {
 
-char *rpath = normalize_path(src,src_len);
+char *rpath = normalize_path(src);
 if(rpath && !access(rpath,F_OK)) 
 	return rpath;
 return NULL;
@@ -105,7 +109,7 @@ return NULL;
 char *libio_realpath_chk(const char *buf, char *resolved, size_t resolvedlen)
 {
 
-resolved = normalize_path(buf,strlen(buf));
+resolved = normalize_path(buf);
 if(resolved && !access(resolved,F_OK)) 
 	return resolved;
 return NULL;

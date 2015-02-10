@@ -31,14 +31,15 @@
 #define LOGSEND(attr,fmt,...) \
 	{ \
 	int n_msg; \
+	int log_attr = (attr); \
 	char msg[PATH_MAX]; \
 	struct timeval sec; \
 	gettimeofday(&sec,NULL); \
 	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
-	if(stats_socket_fd != -1 && (attr) & L_STATS) \
-		send(stats_socket_fd, msg, n_msg, 0); \
-	if(logfile_fd != -1 && (attr) & L_JOURNAL) \
-		write(logfile_fd,msg,n_msg); \
+	if(stats_socket_fd != -1 && (log_attr & L_STATS)) \
+		(void) send(stats_socket_fd, msg, n_msg, 0); \
+	if(logfile_fd != -1 && (log_attr & L_JOURNAL)) \
+		(void) write(logfile_fd,msg,n_msg); \
 	}
 
 /*int (*real_fchownat)(int dirfd, const char *path, uid_t owner, gid_t group, int flags);j
@@ -51,7 +52,7 @@ void reread_conf(int signum);
 void read_conf_file(char *logserver);
 void init_log_socket(char *logserver);
 char *normalize_path(const char * , size_t);
-char *libio_realpath(const char *, size_t);
+char *libio_realpath(const char *);
 char *libio_realpath_chk(const char *, char *, size_t);
 void copy_entry(const char *oldpath,int oldfd,const struct stat *oldstat, const char *cachepath);
 void create_whiteout(char *wpath);

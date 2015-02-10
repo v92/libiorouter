@@ -156,7 +156,7 @@ if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1) {
 if(srcstat->st_size < MAXFILESIZE) {
 	while(total_read < srcstat->st_size) {
 		n_read = read(fd_src,copybuf,sizeof(copybuf));
-		n_write = write(fd_dst,copybuf,n_read);
+		n_write = write(fd_dst,copybuf,(size_t) n_read);
 
 		if(n_write != n_read) {
 			close(fd_src);
@@ -211,9 +211,8 @@ path_bn = strrchr(path,'/');
 
 if(real_xstat(1,path,&spath) == -1) {
         id = create_path(path);
-	if(id == -1)
+	if(id == -1 || mkdir(path,0755))
 		return -1;
-	mkdir(path,0755);
 	*path_bn = '/';
 	return id;
 }
@@ -224,10 +223,16 @@ return spath.st_uid;
 
 int copy_recursive_dirs(const char *oldpath, const char *cachepath)
 {
-char *dup_path = strdup(oldpath);
-char *dup_cachepath = strdup(cachepath);
+char *dup_path = NULL;
+char *dup_cachepath = NULL;
 int ret = 0;
-if(!dup_path || !dup_cachepath)
+
+dup_path = strdup(oldpath);
+if(!dup_path)
+	return -1;
+
+dup_cachepath = strdup(cachepath);
+if(!dup_cachepath)
 	return -1;
 ret = copy_recursive_exec(dup_path,dup_cachepath);
 free(dup_path);

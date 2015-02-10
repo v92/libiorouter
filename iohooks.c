@@ -373,7 +373,7 @@ char *realpath(const char *path, char *resolved_path)
 REDIRCHECK("realpath %s",real_realpath,path,resolved_path);
 
 if(!strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
-	resolved_path = libio_realpath(path,strlen(path));
+	resolved_path = libio_realpath(path);
 	LOGSEND(L_STATS, "HIT realpath %s",path);
 	return resolved_path;
 } 

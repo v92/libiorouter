@@ -145,7 +145,7 @@ int open(const char *argpath,int flags,...)
 		}
 		goto miss;
 	}
-	if(whiteout_check(path) < 0) 
+	if(!whiteout_check(path)) 
 		return -1;
 
 	strncat(cachepath,path,sizeof(cachepath));
@@ -183,7 +183,7 @@ DIR *opendir(const char *argpath)
 
 	REDIRCHECK("opendir",real_opendir,path);
 
-	if(whiteout_check(path) < 0) 
+	if(!whiteout_check(path)) 
 		return NULL;
 
 	strncat(cachepath,path,sizeof(cachepath));
@@ -247,7 +247,7 @@ int access(const char *argpath,int amode)
 
 	REDIRCHECK("access",real_access,path,amode);
 
-	if(whiteout_check(path) < 0) 
+	if(!whiteout_check(path)) 
 		return -1;
 
 	strncat(cachepath,path,sizeof(cachepath));

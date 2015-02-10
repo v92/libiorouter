@@ -25,14 +25,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <limits.h>
 
 /* lstat-less realpath version */
-char * normalize_path(const char * src, size_t src_len) {
+char * normalize_path(const char * src) {
 
         char * res;
         size_t res_len;
+        size_t src_len;
 
         const char * ptr = src;
         const char * end = &src[src_len];
         const char * next;
+	
+	src_len = strlen(src);
 
         if (src_len == 0 || src[0] != '/') {
 

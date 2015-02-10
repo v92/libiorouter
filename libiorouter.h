@@ -31,7 +31,7 @@
 #define LOGSEND(attr,fmt,...) \
 	{ \
 	int n_msg; \
-	int log_attr = (attr);
+	int log_attr = (attr); \
 	char msg[PATH_MAX]; \
 	struct timeval sec; \
 	gettimeofday(&sec,NULL); \

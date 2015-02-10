@@ -31,13 +31,14 @@
 #define LOGSEND(attr,fmt,...) \
 	{ \
 	int n_msg; \
+	int log_attr = (attr);
 	char msg[PATH_MAX]; \
 	struct timeval sec; \
 	gettimeofday(&sec,NULL); \
 	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
-	if(stats_socket_fd != -1 && ((attr) & L_STATS) != 0) \
+	if(stats_socket_fd != -1 && (log_attr & L_STATS)) \
 		send(stats_socket_fd, msg, n_msg, 0); \
-	if(logfile_fd != -1 && ((attr) & L_JOURNAL) != 0) \
+	if(logfile_fd != -1 && (log_attr & L_JOURNAL)) \
 		write(logfile_fd,msg,n_msg); \
 	}
 

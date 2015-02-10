@@ -35,9 +35,9 @@
 	struct timeval sec; \
 	gettimeofday(&sec,NULL); \
 	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
-	if(stats_socket_fd != -1 && (attr) & L_STATS) \
+	if(stats_socket_fd != -1 && ((attr) & L_STATS) != 0) \
 		send(stats_socket_fd, msg, n_msg, 0); \
-	if(logfile_fd != -1 && (attr) & L_JOURNAL) \
+	if(logfile_fd != -1 && ((attr) & L_JOURNAL) != 0) \
 		write(logfile_fd,msg,n_msg); \
 	}
 

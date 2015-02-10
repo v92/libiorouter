@@ -29,14 +29,18 @@ char * normalize_path(const char * src) {
 
         char * res;
         size_t res_len;
-        size_t src_len = strlen(src);
+        size_t src_len;
 	
-        const char * ptr = src;
-        const char * end = &src[src_len];
+        const char * ptr;
+        const char * end;
         const char * next;
 	
 	if(!src)	
 		return NULL;
+
+        src_len = strlen(src);
+        ptr = src;
+        end = &src[src_len];
 
         if (src[0] != '/') {
 

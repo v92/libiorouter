@@ -156,9 +156,10 @@ if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1) {
 if(srcstat->st_size < MAXFILESIZE) {
 	while(total_read < srcstat->st_size) {
 		n_read = read(fd_src,copybuf,sizeof(copybuf));
-		n_write = write(fd_dst,copybuf,(size_t) n_read);
+		if(n_read >= 0) 
+			n_write = write(fd_dst,copybuf,n_read);
 
-		if(n_write != n_read) {
+		if(n_read == -1 || n_write != n_read) {
 			close(fd_src);
 			ftruncate(fd_dst,0);
 			close(fd_dst);

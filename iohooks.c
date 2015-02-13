@@ -245,7 +245,7 @@ int openat(int dirfd,const char *path,int flags,...)
 int access(const char *argpath,int amode)
 {
 	char *path = NULL;
-	char cachepath[PATH_MAX];
+	char cachepath[PATH_MAX] = { CACHEDIR };
 	int ret = 0,ret2 = 0;
 
 	path = normalize_path(argpath,strlen(argpath));

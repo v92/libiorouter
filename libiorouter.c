@@ -156,7 +156,7 @@ if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1) {
 if(srcstat->st_size < MAXFILESIZE) {
 	while(total_read < srcstat->st_size) {
 		n_read = read(fd_src,copybuf,sizeof(copybuf));
-		if(n_read >= 0) 
+		if(n_read > 0) 
 			n_write = write(fd_dst,copybuf,n_read);
 
 		if(n_read == -1 || n_write != n_read) {
@@ -364,10 +364,10 @@ char cachepath[PATH_MAX];
 snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",CACHEDIR,argpath);
 ret = real_access(cachepath,F_OK);
 if(!ret) {
-	return -1;
+	return 0;
 }
 if(ret == -1 && errno == ENOTDIR) {
-	return -1;
+	return 0;
 }
 return ret;	
 }

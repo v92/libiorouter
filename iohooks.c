@@ -132,7 +132,8 @@ int open(const char *argpath,int flags,...)
 
 	/* special handling for session files */
 	if(strstr(path,"sess_") && flags & O_CREAT) {
-		return creat(path,S_IRUSR|S_IWUSR);
+		ret2 = creat(path,S_IRUSR|S_IWUSR);
+		goto cleanup;
 	}	
 	if(flags & (O_WRONLY | O_CREAT | O_TRUNC)) {
 		snprintf(cachepath,sizeof(cachepath),"/run/%s",path);
@@ -145,13 +146,16 @@ int open(const char *argpath,int flags,...)
 		}
 		goto miss;
 	}
-	if(!whiteout_check(path)) 
-		return -1;
+	if(!whiteout_check(path)) {
+		ret2 = -1;
+		goto cleanup;
+	}
 
 	strncat(cachepath,path,sizeof(cachepath));
 	ret = real_open(cachepath,flags);
 	if (ret >= 0) { 
 		LOGSEND(L_STATS, "HIT %s %s","open",cachepath); 
+		ret2 = ret;
 		goto cleanup;
 	} else 
 		LOGSEND(L_STATS, "MISS %s %s","open",cachepath); 
@@ -169,6 +173,7 @@ miss:
 	}
 #endif
 cleanup:
+	printf("DEBUG: open %s %d\n",path,ret2);
 	free(path);
 	return ret2;
 }

@@ -173,7 +173,6 @@ miss:
 	}
 #endif
 cleanup:
-	printf("DEBUG: open %s %d\n",path,ret2);
 	free(path);
 	return ret2;
 }
@@ -188,8 +187,9 @@ DIR *opendir(const char *argpath)
 
 	REDIRCHECK("opendir",real_opendir,path);
 
-	if(!whiteout_check(path)) 
-		return NULL;
+	if(!whiteout_check(path)) {
+		goto cleanup;
+	}
 
 	strncat(cachepath,path,sizeof(cachepath));
 	ret = real_opendir(cachepath);
@@ -252,8 +252,10 @@ int access(const char *argpath,int amode)
 
 	REDIRCHECK("access",real_access,path,amode);
 
-	if(!whiteout_check(path)) 
-		return -1;
+	if(!whiteout_check(path)) {
+		ret2 = -1;
+		goto cleanup;
+	}
 
 	strncat(cachepath,path,sizeof(cachepath));
 	ret = real_access(cachepath,amode);

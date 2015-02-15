@@ -328,7 +328,8 @@ char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 if(!argpath)
 	return -1;
-if(*argpath == '/' && dirfd == AT_FDCWD) {
+
+if(dirfd == AT_FDCWD) {
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
@@ -357,7 +358,8 @@ char cachepath[PATH_MAX] = { CACHEDIR };
 
 if(!argpath)
 	return -1;
-if(*argpath == '/' && dirfd == AT_FDCWD) {
+
+if(dirfd == AT_FDCWD) {
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
@@ -438,7 +440,7 @@ char cachepath[PATH_MAX] = { CACHEDIR };
 
 if(!argpath)
 	return -1;
-if(*argpath == '/' && dirfd == AT_FDCWD) {
+if(dirfd == AT_FDCWD) {
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("fchownat",real_fchownat,dirfd,path,owner,group,flags);

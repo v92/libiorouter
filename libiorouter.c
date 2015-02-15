@@ -76,6 +76,7 @@ HOOK("chmod",real_chmod);
 HOOK("chown",real_chown);
 HOOK("realpath",real_realpath);
 HOOK("unlink",real_unlink);
+HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);
 HOOK("rmdir",real_rmdir);
 	
@@ -133,7 +134,6 @@ return;
 int copy_file_contents(const char *srcfile,int oldfd, const struct stat *srcstat,const char *dstfile)
 {
 int fd_src = -1, fd_dst = -1;
-ssize_t total_read = 0,n_read = 0,n_write = 0;
 
 unsigned char copybuf[COPY_BUFFER_SIZE];
 struct utimbuf ftime;
@@ -154,6 +154,7 @@ if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1) {
 } 
 
 if(srcstat->st_size < MAXFILESIZE) {
+	ssize_t total_read = 0,n_read = 0,n_write = 0;
 	while(total_read < srcstat->st_size) {
 		n_read = read(fd_src,copybuf,sizeof(copybuf));
 		if(n_read > 0) 
@@ -204,13 +205,13 @@ int create_path(char *path)
 {
 char *path_bn;
 struct stat spath;
-int id;
 
 path_bn = strrchr(path,'/');
 
 *path_bn = '\0';
 
 if(real_xstat(1,path,&spath) == -1) {
+	int id;
         id = create_path(path);
 	if(id == -1 || mkdir(path,0755))
 		return -1;
@@ -248,7 +249,6 @@ return ret;
 int copy_dir_entries(const char *oldpath, const char *cachepath)
 {
 DIR *dirfd;
-int ofd;
 struct dirent *dirp;
 struct stat htstat;
 char full_path[PATH_MAX];
@@ -262,6 +262,7 @@ if(dirfd) {
 			continue;
 		snprintf(full_path,PATH_MAX,"%s/%s", cachepath, full_name);
 		if(dirp->d_type == DT_REG || dirp->d_type == DT_UNKNOWN) {
+			int ofd;
 			ofd = creat(full_path,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 			if(ofd >= 0) 
 				close(ofd);
@@ -293,10 +294,7 @@ struct stat pathstat;
 struct stat cachepathstat;
 struct utimbuf dtime;
 
-int ret = 0;
-
-
-if((ret = real_xstat(1,cpath,&cachepathstat)) == -1) {
+if(real_xstat(1,cpath,&cachepathstat) == -1) {
 	path_bn = strrchr(ppath,'/');
 	cache_bn = strrchr(cpath,'/');
 	if(real_xstat(1,ppath,&pathstat) == -1) {

@@ -38,12 +38,13 @@ extern char *(*real_realpath)(const char *, char *);
 extern char *(*real_realpath_chk)(const char *, char *, size_t);
 extern int (*real_lxstat)(int,const char *,struct stat *);
 extern int (*real_lxstat64)(int,const char *,struct stat64 *);
-extern int (*real_unlink)(const char *path);
-extern int (*real_chown)(const char *path, uid_t owner, gid_t group);
-extern int (*real_chmod)(const char *path,mode_t mode);
+extern int (*real_unlink)(const char *);
+extern int (*real_unlinkat)(int,const char *,int);
+extern int (*real_chown)(const char *path, uid_t , gid_t );
+extern int (*real_chmod)(const char *path, mode_t);
 extern int (*real_rmdir)(const char *path);
-extern int (*real_access)(const char *path, int amode);
-extern DIR *(*real_opendir)(const char *name);
+extern int (*real_access)(const char *, int);
+extern DIR *(*real_opendir)(const char *);
 
 
 int __lxstat64(int ver,const char *path,struct stat64 *buf)
@@ -138,11 +139,11 @@ int open(const char *argpath,int flags,...)
 	if(flags & (O_WRONLY | O_CREAT | O_TRUNC | O_DIRECTORY)) {
 		snprintf(cachepath,sizeof(cachepath),"/run/%s",path);
 		if(!real_access(cachepath,F_OK)) {
-			unlink(cachepath);
+			real_unlink(cachepath);
 		}
 		snprintf(cachepath,sizeof(cachepath),"/run/%s.whiteout",path);
 		if(!real_access(cachepath,F_OK)) {
-			unlink(cachepath);
+			real_unlink(cachepath);
 		}
 		LOGSEND(L_STATS|L_JOURNAL, "CALL %s %s","openwr",path); 
 		goto miss;
@@ -312,6 +313,32 @@ if(ret == 0)
 
 ret = real_unlink(path);
 free(path);
+return ret;
+}
+
+int unlinkat(int dirfd,const char *argpath,int flags)
+{
+int ret;
+char *path = NULL;
+char cachepath[PATH_MAX] = { CACHEDIR };
+if(dirfd == AT_FDCWD) {
+	path = normalize_path(argpath,strlen(argpath));
+
+	REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
+
+	strncat(cachepath,path,PATH_MAX);
+
+	ret = real_unlinkat(dirfd,cachepath,flags);
+	if(ret == -1)
+		LOGSEND(L_STATS, "FAIL unlinkat %s",cachepath);
+	if(ret == 0)
+		LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",path);
+
+	ret = real_unlinkat(dirfd,path,flags);
+	free(path);
+	return ret;
+} 
+ret = real_unlinkat(dirfd,argpath,flags);
 return ret;
 }
 

@@ -42,6 +42,7 @@ extern int (*real_unlink)(const char *);
 extern int (*real_unlinkat)(int,const char *,int);
 extern int (*real_chown)(const char *path, uid_t , gid_t );
 extern int (*real_chmod)(const char *path, mode_t);
+extern int (*real_fchmodat)(int,const char *, mode_t,int);
 extern int (*real_rmdir)(const char *path);
 extern int (*real_access)(const char *, int);
 extern DIR *(*real_opendir)(const char *);
@@ -340,6 +341,33 @@ if(dirfd == AT_FDCWD) {
 } 
 ret = real_unlinkat(dirfd,argpath,flags);
 return ret;
+}
+
+int fchmodat(int dirfd,const char *argpath,mode_t mode,int flags)
+{
+int ret;
+char *path = NULL;
+char cachepath[PATH_MAX] = { CACHEDIR };
+
+if(dirfd == AT_FDCWD) {
+	path = normalize_path(argpath,strlen(argpath));
+
+	REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
+
+	strncat(cachepath,path,PATH_MAX);
+
+	ret = real_fchmodat(dirfd,cachepath,mode,flags);
+	if(ret == -1)
+		LOGSEND(L_STATS, "FAIL fchmodat %s",cachepath);
+	if(ret == 0)
+		LOGSEND(L_JOURNAL|L_STATS, "HIT fchmodat %s",cachepath);
+
+	ret = real_fchmodat(dirfd,path,mode,flags);
+	free(path);
+	return ret;
+} 
+	ret = real_fchmodat(dirfd,argpath,mode,flags);
+	return ret;
 }
 
 int chmod(const char *argpath,mode_t mode)

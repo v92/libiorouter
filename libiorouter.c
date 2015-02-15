@@ -73,6 +73,7 @@ static void libiorouter_init(void)
 HOOK("open",real_open);
 HOOK("opendir",real_opendir);
 HOOK("chmod",real_chmod);
+HOOK("fchmodat",real_fchmodat);
 HOOK("chown",real_chown);
 HOOK("realpath",real_realpath);
 HOOK("unlink",real_unlink);

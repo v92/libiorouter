@@ -46,6 +46,7 @@ extern int (*real_chmod)(const char *path, mode_t);
 extern int (*real_fchmodat)(int,const char *, mode_t,int);
 extern int (*real_rmdir)(const char *path);
 extern int (*real_access)(const char *, int);
+extern int (*real_faccessat)(int,const char *, int,int);
 extern DIR *(*real_opendir)(const char *);
 
 
@@ -254,7 +255,51 @@ int openat(int dirfd,const char *path,int flags,...)
 }
 */
 
-int access(const char *argpath,int amode)
+int faccessat(int dirfd,const char *argpath,int mode,int flags)
+{
+	char *path = NULL;
+	char cachepath[PATH_MAX] = { CACHEDIR };
+
+	if(dirfd == AT_FDCWD) {
+		int ret = 0,ret2 = 0;
+		path = normalize_path(argpath,strlen(argpath));
+
+		REDIRCHECK("faccessat",real_faccessat,dirfd,path,mode,flags);
+
+		if(!whiteout_check(path)) {
+			ret2 = -1;
+			goto cleanup;
+		}
+
+		strncat(cachepath,path,sizeof(cachepath));
+		ret = real_faccessat(dirfd,cachepath,mode,flags);
+		if (ret >= 0) { 
+			LOGSEND(L_STATS, "HIT %s %s","faccessat",cachepath); 
+			ret2 = ret;
+			goto cleanup;
+		} else 
+			LOGSEND(L_STATS, "MISS %s %s","faccessat",cachepath); 
+
+
+		ret2 = real_faccessat(dirfd,path,mode,flags);
+	#ifdef RWCACHE
+		if(ret == -1) {
+			struct stat buf;
+			real_xstat(1,path,&buf);
+			copy_entry(path,-1,(struct stat *) &buf,cachepath);
+			if(ret2 == -1) {
+				create_whiteout(cachepath);
+			}
+		}
+	#endif
+cleanup:
+	free(path);
+	return ret2;
+	}
+	return real_faccessat(dirfd,path,mode,flags);
+}
+
+int access(const char *argpath,int mode)
 {
 	char *path = NULL;
 	char cachepath[PATH_MAX] = { CACHEDIR };
@@ -262,7 +307,7 @@ int access(const char *argpath,int amode)
 
 	path = normalize_path(argpath,strlen(argpath));
 
-	REDIRCHECK("access",real_access,path,amode);
+	REDIRCHECK("access",real_access,path,mode);
 
 	if(!whiteout_check(path)) {
 		ret2 = -1;
@@ -270,7 +315,7 @@ int access(const char *argpath,int amode)
 	}
 
 	strncat(cachepath,path,sizeof(cachepath));
-	ret = real_access(cachepath,amode);
+	ret = real_access(cachepath,mode);
 	if (ret >= 0) { 
 		LOGSEND(L_STATS, "HIT %s %s","access",cachepath); 
 		ret2 = ret;
@@ -279,7 +324,7 @@ int access(const char *argpath,int amode)
 		LOGSEND(L_STATS, "MISS %s %s","access",cachepath); 
 
 
-	ret2 = real_access(path,amode);
+	ret2 = real_access(path,mode);
 #ifdef RWCACHE
 	if(ret == -1) {
 		struct stat buf;
@@ -323,13 +368,13 @@ return ret;
 
 int unlinkat(int dirfd,const char *argpath,int flags)
 {
-int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 if(!argpath)
 	return -1;
 
 if(dirfd == AT_FDCWD) {
+	int ret;
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
@@ -346,13 +391,11 @@ if(dirfd == AT_FDCWD) {
 	free(path);
 	return ret;
 } 
-ret = real_unlinkat(dirfd,argpath,flags);
-return ret;
+return real_unlinkat(dirfd,argpath,flags);
 }
 
 int fchmodat(int dirfd,const char *argpath,mode_t mode,int flags)
 {
-int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 
@@ -360,6 +403,7 @@ if(!argpath)
 	return -1;
 
 if(dirfd == AT_FDCWD) {
+	int ret;
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
@@ -376,8 +420,7 @@ if(dirfd == AT_FDCWD) {
 	free(path);
 	return ret;
 } 
-ret = real_fchmodat(dirfd,argpath,mode,flags);
-return ret;
+return real_fchmodat(dirfd,argpath,mode,flags);
 }
 
 int chmod(const char *argpath,mode_t mode)
@@ -434,13 +477,13 @@ return ret;
 
 int fchownat(int dirfd,const char *argpath, uid_t owner, gid_t group,int flags)
 {
-int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 
 if(!argpath)
 	return -1;
 if(dirfd == AT_FDCWD) {
+	int ret;
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("fchownat",real_fchownat,dirfd,path,owner,group,flags);
@@ -457,8 +500,7 @@ if(dirfd == AT_FDCWD) {
 	free(path);
 	return ret;
 }
-ret = real_fchownat(dirfd,path,owner,group,flags);
-return ret;
+return real_fchownat(dirfd,path,owner,group,flags);
 }
 
 int rmdir(const char *argpath)

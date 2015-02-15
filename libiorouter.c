@@ -80,6 +80,7 @@ HOOK("realpath",real_realpath);
 HOOK("unlink",real_unlink);
 HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);
+HOOK("faccess",real_faccessat);
 HOOK("rmdir",real_rmdir);
 	
 HOOK("__xstat",real_xstat);

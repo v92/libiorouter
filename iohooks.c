@@ -135,7 +135,7 @@ int open(const char *argpath,int flags,...)
 		ret2 = creat(path,S_IRUSR|S_IWUSR);
 		goto cleanup;
 	}	
-	if(flags & (O_WRONLY | O_CREAT | O_TRUNC)) {
+	if(flags & (O_WRONLY | O_CREAT | O_TRUNC | O_DIRECTORY)) {
 		snprintf(cachepath,sizeof(cachepath),"/run/%s",path);
 		if(!real_access(cachepath,F_OK)) {
 			unlink(cachepath);
@@ -144,6 +144,7 @@ int open(const char *argpath,int flags,...)
 		if(!real_access(cachepath,F_OK)) {
 			unlink(cachepath);
 		}
+		LOGSEND(L_STATS|L_JOURNAL, "CALL %s %s","openwr",path); 
 		goto miss;
 	}
 	if(!whiteout_check(path)) {
@@ -154,13 +155,21 @@ int open(const char *argpath,int flags,...)
 	strncat(cachepath,path,sizeof(cachepath));
 	ret = real_open(cachepath,flags);
 	if (ret >= 0) { 
+		struct stat cachestat;
+		(void) fstat(ret,&cachestat);
+		if(S_ISREG(cachestat.st_mode) && cachestat.st_size == 0) { 
+			struct stat buf;
+			if(!real_xstat(1,path,&buf))
+				copy_entry(path,-1,&buf,cachepath); 
+			goto miss;
+		}
 		LOGSEND(L_STATS, "HIT %s %s","open",cachepath); 
 		ret2 = ret;
 		goto cleanup;
-	} else 
-		LOGSEND(L_STATS, "MISS %s %s","open",cachepath); 
+	}
 	
 miss:
+	LOGSEND(L_STATS, "MISS %s %s","open",cachepath); 
 	ret2 = real_open(path,flags);
 #ifdef RWCACHE
 	if(ret == -1) {
@@ -299,7 +308,7 @@ ret = real_unlink(cachepath);
 if(ret == -1)
 	LOGSEND(L_STATS, "FAIL unlink %s",cachepath);
 if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT unlink %s",cachepath);
+	LOGSEND(L_JOURNAL|L_STATS, "HIT unlink %s",path);
 
 ret = real_unlink(path);
 free(path);

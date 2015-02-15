@@ -22,8 +22,9 @@
         } \
 	if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { \
                 LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
+                ret = func(__VA_ARGS__); \
 		free(path); \
-                return func(__VA_ARGS__); \
+		return ret; \
         } \
 
 #define L_JOURNAL 1

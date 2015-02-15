@@ -104,7 +104,7 @@ char *libio_realpath(const char * src)
 {
 
 char *rpath = normalize_path(src);
-if(rpath && !access(rpath,F_OK)) 
+if(rpath) 
 	return rpath;
 return NULL;
 }
@@ -114,7 +114,7 @@ char *libio_realpath_chk(const char *buf, char *resolved, size_t resolvedlen)
 {
 
 resolved = normalize_path(buf);
-if(resolved && !access(resolved,F_OK)) 
+if(resolved) 
 	return resolved;
 return NULL;
 }

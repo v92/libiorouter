@@ -540,24 +540,32 @@ return ret;
 
 char *realpath(const char *path, char *resolved_path)
 {
-REDIRCHECK("realpath %s",real_realpath,path,resolved_path);
-
-if(!strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
-	resolved_path = libio_realpath(path);
-	LOGSEND(L_STATS, "HIT realpath %s",path);
-	return resolved_path;
+if(!path || !io_on_off || strstr(path,".snapshot")) { 
+	LOGSEND(L_STATS, "CALL %s %s","realpath",path); 
+	return real_realpath(path,resolved_path); 
 } 
-	LOGSEND(L_STATS, "MISS realpath %s",path);
-return real_realpath(path,resolved_path);
+
+if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
+	LOGSEND(L_STATS, "CALL %s %s","realpath",path); 
+	return real_realpath(path,resolved_path); 
+} 
+resolved_path = libio_realpath(path);
+LOGSEND(L_STATS, "HIT realpath %s",path);
+return resolved_path;
 }
 
 char *__realpath_chk(const char *path, char *resolved_path,size_t resolved_len)
 {
-REDIRCHECK("__realpath_chk %s",real_realpath_chk,path,resolved_path,resolved_len);
-if(!strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
-	LOGSEND(L_STATS, "HIT __realpath_chk %s",path);
-	return libio_realpath_chk(path,resolved_path,resolved_len);
+if(!path || !io_on_off || strstr(path,".snapshot")) { 
+	LOGSEND(L_STATS, "CALL %s %s","__realpath_chk",path); 
+	return real_realpath_chk(path,resolved_path,resolved_len); 
 } 
-	LOGSEND(L_STATS, "MISS __realpath_chk %s",path);
-return real_realpath_chk(path,resolved_path,resolved_len);
+
+if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
+	LOGSEND(L_STATS, "CALL %s %s","__realpath_chk",path); 
+	return real_realpath_chk(path,resolved_path,resolved_len); 
+} 
+resolved_path = libio_realpath_chk(path,resolved_path,resolved_len);
+LOGSEND(L_STATS, "HIT realpath %s",path);
+return resolved_path;
 }

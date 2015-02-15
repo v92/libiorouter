@@ -22,6 +22,7 @@
         } \
 	if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { \
                 LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
+		free(path); \
                 return func(__VA_ARGS__); \
         } \
 

@@ -232,7 +232,7 @@ DIR *opendir(const char *argpath)
 		struct stat oldstat;
 		if(!ret2) 
 			create_whiteout(cachepath);
-		if(!fstat(dirfd(ret2),&oldstat))
+		else if(!fstat(dirfd(ret2),&oldstat))
 			copy_entry(path,-1,&oldstat,cachepath);
 	}
 #endif

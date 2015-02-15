@@ -165,7 +165,7 @@ int open(const char *argpath,int flags,...)
 		goto cleanup;
 	}
 
-	strncat(cachepath,path,sizeof(cachepath));
+	strncat(cachepath,path,sizeof(cachepath)-1);
 	ret = real_open(cachepath,flags);
 	if (ret >= 0) { 
 		struct stat cachestat;
@@ -213,7 +213,7 @@ DIR *opendir(const char *argpath)
 		goto cleanup;
 	}
 
-	strncat(cachepath,path,sizeof(cachepath));
+	strncat(cachepath,path,sizeof(cachepath)-1);
 	ret = real_opendir(cachepath);
 	if (ret) { 
 		readdir(ret);	 /* . */
@@ -280,7 +280,7 @@ int faccessat(int dirfd,const char *argpath,int mode,int flags)
 			goto cleanup;
 		}
 
-		strncat(cachepath,path,sizeof(cachepath));
+		strncat(cachepath,path,sizeof(cachepath)-1);
 		ret = real_faccessat(dirfd,cachepath,mode,flags);
 		if (ret >= 0) { 
 			LOGSEND(L_STATS, "HIT %s %s","faccessat",cachepath); 
@@ -323,7 +323,7 @@ int access(const char *argpath,int mode)
 		goto cleanup;
 	}
 
-	strncat(cachepath,path,sizeof(cachepath));
+	strncat(cachepath,path,sizeof(cachepath)-1);
 	ret = real_access(cachepath,mode);
 	if (ret >= 0) { 
 		LOGSEND(L_STATS, "HIT %s %s","access",cachepath); 
@@ -362,7 +362,7 @@ path = normalize_path(argpath,strlen(argpath));
 
 REDIRCHECK("unlink",real_unlink,path);
 
-strncat(cachepath,path,PATH_MAX);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 ret = real_unlink(cachepath);
 if(ret == -1)
@@ -388,7 +388,7 @@ if(dirfd == AT_FDCWD) {
 
 	REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
 
-	strncat(cachepath,path,PATH_MAX);
+	strncat(cachepath,path,sizeof(cachepath)-1);
 
 	ret = real_unlinkat(dirfd,cachepath,flags);
 	if(ret == -1)
@@ -417,7 +417,7 @@ if(dirfd == AT_FDCWD) {
 
 	REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
 
-	strncat(cachepath,path,PATH_MAX);
+	strncat(cachepath,path,sizeof(cachepath)-1);
 
 	ret = real_fchmodat(dirfd,cachepath,mode,flags);
 	if(ret == -1)
@@ -445,7 +445,7 @@ path = normalize_path(argpath,strlen(argpath));
 
 REDIRCHECK("chmod",real_chmod,path,mode);
 
-strncat(cachepath,path,PATH_MAX);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 ret = real_chmod(cachepath,mode);
 if(ret == -1)
@@ -471,7 +471,7 @@ path = normalize_path(argpath,strlen(argpath));
 
 REDIRCHECK("chown",real_chown,path,owner,group);
 
-strncat(cachepath,path,PATH_MAX);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 ret = real_chown(cachepath,owner,group);
 if(ret == -1)
@@ -497,7 +497,7 @@ if(dirfd == AT_FDCWD) {
 
 	REDIRCHECK("fchownat",real_fchownat,dirfd,path,owner,group,flags);
 
-	strncat(cachepath,path,PATH_MAX);
+	strncat(cachepath,path,sizeof(cachepath)-1);
 
 	ret = real_fchownat(dirfd,cachepath,owner,group,flags);
 	if(ret == -1)
@@ -525,7 +525,7 @@ path = normalize_path(argpath,strlen(argpath));
 
 REDIRCHECK("rmdir",real_rmdir,path);
 
-strncat(cachepath,path,PATH_MAX);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 ret = real_rmdir(cachepath);
 if(ret == -1)

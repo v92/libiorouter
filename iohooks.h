@@ -10,6 +10,7 @@ int (*real_lxstat64)(int,const char *,struct stat64 *) = NULL;
 int (*real_unlink)(const char *) = NULL;
 int (*real_unlinkat)(int,const char *,int) = NULL;
 int (*real_chown)(const char *, uid_t, gid_t) = NULL;
+int (*real_fchownat)(int,const char *, uid_t, gid_t,int) = NULL;
 int (*real_chmod)(const char *,mode_t) = NULL;
 int (*real_fchmodat)(int,const char *,mode_t,int) = NULL;
 int (*real_rmdir)(const char *) = NULL;

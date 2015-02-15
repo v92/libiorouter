@@ -75,6 +75,7 @@ HOOK("opendir",real_opendir);
 HOOK("chmod",real_chmod);
 HOOK("fchmodat",real_fchmodat);
 HOOK("chown",real_chown);
+HOOK("fchownat",real_fchownat);
 HOOK("realpath",real_realpath);
 HOOK("unlink",real_unlink);
 HOOK("unlinkat",real_unlinkat);

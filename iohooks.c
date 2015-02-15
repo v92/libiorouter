@@ -41,6 +41,7 @@ extern int (*real_lxstat64)(int,const char *,struct stat64 *);
 extern int (*real_unlink)(const char *);
 extern int (*real_unlinkat)(int,const char *,int);
 extern int (*real_chown)(const char *path, uid_t , gid_t );
+extern int (*real_fchownat)(int,const char *path, uid_t , gid_t,int);
 extern int (*real_chmod)(const char *path, mode_t);
 extern int (*real_fchmodat)(int,const char *, mode_t,int);
 extern int (*real_rmdir)(const char *path);
@@ -300,6 +301,9 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 
+if(!argpath)
+	return -1;
+
 path = normalize_path(argpath,strlen(argpath));
 
 REDIRCHECK("unlink",real_unlink,path);
@@ -322,7 +326,9 @@ int unlinkat(int dirfd,const char *argpath,int flags)
 int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
-if(dirfd == AT_FDCWD) {
+if(!argpath)
+	return -1;
+if(*argpath == '/' && dirfd == AT_FDCWD) {
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
@@ -349,7 +355,9 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 
-if(dirfd == AT_FDCWD) {
+if(!argpath)
+	return -1;
+if(*argpath == '/' && dirfd == AT_FDCWD) {
 	path = normalize_path(argpath,strlen(argpath));
 
 	REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
@@ -366,8 +374,8 @@ if(dirfd == AT_FDCWD) {
 	free(path);
 	return ret;
 } 
-	ret = real_fchmodat(dirfd,argpath,mode,flags);
-	return ret;
+ret = real_fchmodat(dirfd,argpath,mode,flags);
+return ret;
 }
 
 int chmod(const char *argpath,mode_t mode)
@@ -375,6 +383,9 @@ int chmod(const char *argpath,mode_t mode)
 int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
+
+if(!argpath)
+	return -1;
 
 path = normalize_path(argpath,strlen(argpath));
 
@@ -399,6 +410,9 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
 
+if(!argpath)
+	return -1;
+
 path = normalize_path(argpath,strlen(argpath));
 
 REDIRCHECK("chown",real_chown,path,owner,group);
@@ -416,11 +430,43 @@ free(path);
 return ret;
 }
 
+int fchownat(int dirfd,const char *argpath, uid_t owner, gid_t group,int flags)
+{
+int ret;
+char *path = NULL;
+char cachepath[PATH_MAX] = { CACHEDIR };
+
+if(!argpath)
+	return -1;
+if(*argpath == '/' && dirfd == AT_FDCWD) {
+	path = normalize_path(argpath,strlen(argpath));
+
+	REDIRCHECK("fchownat",real_fchownat,dirfd,path,owner,group,flags);
+
+	strncat(cachepath,path,PATH_MAX);
+
+	ret = real_fchownat(dirfd,cachepath,owner,group,flags);
+	if(ret == -1)
+		LOGSEND(L_STATS, "FAIL fchownat %s",cachepath);
+	if(ret == 0)
+		LOGSEND(L_JOURNAL|L_STATS, "HIT fchownat %s",cachepath);
+
+	ret = real_fchownat(dirfd,cachepath,owner,group,flags);
+	free(path);
+	return ret;
+}
+ret = real_fchownat(dirfd,path,owner,group,flags);
+return ret;
+}
+
 int rmdir(const char *argpath)
 {
 int ret;
 char *path = NULL;
 char cachepath[PATH_MAX] = { CACHEDIR };
+
+if(!argpath)
+	return -1;
 
 path = normalize_path(argpath,strlen(argpath));
 

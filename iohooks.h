@@ -3,6 +3,7 @@
 int (*real_open)(const char *,int) = NULL;
 int (*real_xstat)(int,const char *,struct stat *) = NULL;
 int (*real_xstat64)(int,const char *,struct stat64 *) = NULL;
+int (*real_fxstatat)(int,int,const char *,struct stat *,int) = NULL;
 char *(*real_realpath)(const char *, char *) = NULL;
 char *(*real_realpath_chk)(const char *, char *, size_t) = NULL;
 int (*real_lxstat)(int,const char *,struct stat *) = NULL;

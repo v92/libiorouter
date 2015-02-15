@@ -85,6 +85,7 @@ HOOK("rmdir",real_rmdir);
 	
 HOOK("__xstat",real_xstat);
 HOOK("__xstat64",real_xstat64);
+HOOK("fxstatat",real_fxstatat);
 HOOK("__realpath_chk",real_realpath_chk);
 HOOK("__lxstat",real_lxstat);
 HOOK("__lxstat64",real_lxstat64);

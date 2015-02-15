@@ -34,6 +34,7 @@ extern int stats_socket_fd;
 extern int (*real_open)(const char *,int);
 extern int (*real_xstat)(int,const char *,struct stat *);
 extern int (*real_xstat64)(int,const char *,struct stat64 *);
+extern int (*real_fxstatat)(int,int,const char *,struct stat *,int);
 extern char *(*real_realpath)(const char *, char *);
 extern char *(*real_realpath_chk)(const char *, char *, size_t);
 extern int (*real_lxstat)(int,const char *,struct stat *);
@@ -63,6 +64,14 @@ int __lxstat(int ver,const char *argpath,struct stat *buf)
 int __xstat64(int ver,const char *argpath,struct stat64 *buf)
 {
 	return __xstat(ver,argpath,(struct stat *) buf);
+}
+
+int __fxstatat(int ver,int dirfd,const char *argpath,struct stat *buf,int flags)
+{
+	if(dirfd == AT_FDCWD)
+		return __xstat(ver,argpath,buf);
+	else
+		return real_fxstatat(ver,dirfd,argpath,buf,flags);
 }
 
 int __xstat(int ver,const char *argpath,struct stat *buf)

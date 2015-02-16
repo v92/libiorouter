@@ -1,13 +1,12 @@
 #ifndef LIBIOROUTER_H
 #define LIBIOROUTER_H
-#define SOCK_PATH "/var/run/libiorouter.sock"
-
-#define CACHEDIR "/run"
-
-#define REWRITEDIR "/nfsmnt"
+/* edit defaults here */
+#define DEFAULT_SOCK_PATH "/var/run/libiorouter.sock"
+#define DEFAULT_CACHEDIR "/run"
+#define DEFAULT_REWRITEDIR "/nfsmnt"
+#define DEFAULT_MAXFILESIZE 10485760
 
 #define COPY_BUFFER_SIZE 65536
-#define MAXFILESIZE 10485760
 
 #define APACHE_DEFAULT_GROUP 1003
 #define DIRPBUF_SIZE 4096
@@ -20,7 +19,7 @@
                 LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
                 return func(__VA_ARGS__); \
         } \
-	if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { \
+	if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { \
                 LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
                 ret = func(__VA_ARGS__); \
 		free(path); \
@@ -44,8 +43,6 @@
 		(void) write(logfile_fd,msg,n_msg); \
 	}
 
-/*int (*real_fchownat)(int dirfd, const char *path, uid_t owner, gid_t group, int flags);j
-int (*real_fchmodat)(int dirfd, const char *path, mode_t mode, int flags);*/
 int create_path(char *path);
 int copy_recursive_dirs(const char *oldpath,const char *cachepath);
 int copy_recursive_exec(const char *oldpath,const char *cachepath);

@@ -31,6 +31,11 @@ extern int io_on_off;	/* 0 - io routing off, 1 - io routing on */
 extern int logfile_fd;
 extern int stats_socket_fd;
 
+extern char *g_socket_path;
+extern char *g_cache_dir;
+extern size_t g_maxfilesize;
+extern char *g_rewrite_dir;
+
 extern int (*real_open)(const char *,int);
 extern int (*real_xstat)(int,const char *,struct stat *);
 extern int (*real_xstat64)(int,const char *,struct stat64 *);
@@ -51,9 +56,9 @@ extern int (*real_faccessat)(int,const char *, int,int);
 extern DIR *(*real_opendir)(const char *);
 
 
-int __lxstat64(int ver,const char *path,struct stat64 *buf)
+int __lxstat64(int ver,const char *argpath,struct stat64 *buf)
 {
-	return __xstat(ver,path,(struct stat *) buf);
+	return __xstat(ver,argpath,(struct stat *) buf);
 }
 
 int __lxstat(int ver,const char *argpath,struct stat *buf)
@@ -77,7 +82,7 @@ int __fxstatat(int ver,int dirfd,const char *argpath,struct stat *buf,int flags)
 int __xstat(int ver,const char *argpath,struct stat *buf)
 {
 	int ret = 0,ret2 = -1;
-	char cachepath[PATH_MAX] = { CACHEDIR };
+	char cachepath[PATH_MAX];
 	char *path = NULL;
 	char *whiteout; 
 	int n; 
@@ -85,9 +90,9 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 
 	path = normalize_path(argpath,strlen(argpath));
 
-	REDIRCHECK("__xstat",real_xstat,ver,argpath,buf);
+	REDIRCHECK("__xstat",real_xstat,ver,path,buf);
 
-	n = snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",CACHEDIR,path); 
+	n = snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path); 
 	whiteout = cachepath + n - strlen(".whiteout"); 
 	ret = real_access(cachepath,F_OK); 
 	if(ret == 0 || (ret == -1 && errno == ENOTDIR))
@@ -136,8 +141,10 @@ cleanup:
 int open(const char *argpath,int flags,...)
 {
 	int ret = 0,ret2 = 0;
-	char cachepath[PATH_MAX] = { CACHEDIR };
+	char cachepath[PATH_MAX];
 	char *path = NULL;
+
+	strcpy(cachepath,g_cache_dir);
 
 	path = normalize_path(argpath,strlen(argpath));
 
@@ -202,8 +209,10 @@ cleanup:
 DIR *opendir(const char *argpath)
 {
 	DIR *ret = NULL,*ret2 = NULL;
-	char cachepath[PATH_MAX] = { CACHEDIR };
+	char cachepath[PATH_MAX];
 	char *path;
+
+	strcpy(cachepath,g_cache_dir);
 
 	path = normalize_path(argpath,strlen(argpath));
 
@@ -267,7 +276,9 @@ int openat(int dirfd,const char *path,int flags,...)
 int faccessat(int dirfd,const char *argpath,int mode,int flags)
 {
 	char *path = NULL;
-	char cachepath[PATH_MAX] = { CACHEDIR };
+	char cachepath[PATH_MAX];
+
+	strcpy(cachepath,g_cache_dir);
 
 	if(dirfd == AT_FDCWD) {
 		int ret = 0,ret2 = 0;
@@ -311,8 +322,10 @@ cleanup:
 int access(const char *argpath,int mode)
 {
 	char *path = NULL;
-	char cachepath[PATH_MAX] = { CACHEDIR };
+	char cachepath[PATH_MAX];
 	int ret = 0,ret2 = 0;
+
+	strcpy(cachepath,g_cache_dir);
 
 	path = normalize_path(argpath,strlen(argpath));
 
@@ -353,7 +366,9 @@ int unlink(const char *argpath)
 {
 int ret;
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
 
 if(!argpath)
 	return -1;
@@ -378,7 +393,10 @@ return ret;
 int unlinkat(int dirfd,const char *argpath,int flags)
 {
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
+
 if(!argpath)
 	return -1;
 
@@ -406,7 +424,9 @@ return real_unlinkat(dirfd,argpath,flags);
 int fchmodat(int dirfd,const char *argpath,mode_t mode,int flags)
 {
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
 
 if(!argpath)
 	return -1;
@@ -436,7 +456,9 @@ int chmod(const char *argpath,mode_t mode)
 {
 int ret;
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
 
 if(!argpath)
 	return -1;
@@ -462,7 +484,9 @@ int chown(const char *argpath, uid_t owner, gid_t group)
 {
 int ret;
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
 
 if(!argpath)
 	return -1;
@@ -487,7 +511,9 @@ return ret;
 int fchownat(int dirfd,const char *argpath, uid_t owner, gid_t group,int flags)
 {
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
 
 if(!argpath)
 	return -1;
@@ -516,7 +542,9 @@ int rmdir(const char *argpath)
 {
 int ret;
 char *path = NULL;
-char cachepath[PATH_MAX] = { CACHEDIR };
+char cachepath[PATH_MAX];
+
+strcpy(cachepath,g_cache_dir);
 
 if(!argpath)
 	return -1;
@@ -545,7 +573,7 @@ if(!path || !io_on_off || strstr(path,".snapshot")) {
 	return real_realpath(path,resolved_path); 
 } 
 
-if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
+if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { 
 	LOGSEND(L_STATS, "CALL %s %s","realpath",path); 
 	return real_realpath(path,resolved_path); 
 } 
@@ -561,7 +589,7 @@ if(!path || !io_on_off || strstr(path,".snapshot")) {
 	return real_realpath_chk(path,resolved_path,resolved_len); 
 } 
 
-if(strncmp(path,REWRITEDIR,strlen(REWRITEDIR))) { 
+if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { 
 	LOGSEND(L_STATS, "CALL %s %s","__realpath_chk",path); 
 	return real_realpath_chk(path,resolved_path,resolved_len); 
 } 

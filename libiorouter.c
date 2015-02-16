@@ -37,7 +37,10 @@ int io_on_off = 1;	/* 0 - io routing off, 1 - io routing on */
 int logfile_fd = -1;
 int stats_socket_fd = -1;
 
-
+char *g_socket_path = NULL;
+char *g_cache_dir = NULL;
+size_t g_maxfilesize = 0;
+char *g_rewrite_dir = NULL;
 
 void ioonoff(int signum)
 {
@@ -66,6 +69,37 @@ if(debug_on_off == 0)
 	debug_on_off = 1;
 }
 
+void init_global_vars(void)
+{
+char *tmp;
+
+if((tmp = getenv("LIBIOR_SOCK_PATH")) != NULL)
+	g_socket_path = strdup(tmp);
+else
+	g_socket_path = DEFAULT_SOCK_PATH;
+
+if((tmp = getenv("LIBIOR_CACHEDIR")) != NULL)
+	g_cache_dir = strdup(tmp);
+else
+	g_cache_dir = DEFAULT_CACHEDIR;
+
+if((tmp = getenv("LIBIOR_REWRITEDIR")) != NULL)
+	g_rewrite_dir = strdup(tmp);
+else
+	g_rewrite_dir = DEFAULT_REWRITEDIR;
+
+if((tmp = getenv("LIBIOR_MAXFILESIZE")) != NULL)
+	g_maxfilesize = atoi(tmp);
+else
+	g_maxfilesize = DEFAULT_MAXFILESIZE;
+
+syslog(3, "libiorouter: stats socket set to '%s'", g_socket_path);
+syslog(3, "libiorouter: cache dir set to '%s'", g_cache_dir);
+syslog(3, "libiorouter: rewrite dir set to '%s'", g_rewrite_dir);
+syslog(3, "libiorouter: max file size set to '%d'", (int) g_maxfilesize);
+return;
+}
+
 static void libiorouter_init(void) __attribute__ ((constructor));
 
 static void libiorouter_init(void) 
@@ -90,6 +124,7 @@ HOOK("__realpath_chk",real_realpath_chk);
 HOOK("__lxstat",real_lxstat);
 HOOK("__lxstat64",real_lxstat64);
 
+init_global_vars();
 reinit_log_file(SIGPROF);
 signal(SIGTTIN,traceonoff);	
 signal(SIGTTOU,debugonoff);	
@@ -105,13 +140,13 @@ int len;
 struct sockaddr_un remote;
 
 if ((stats_socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 
-	syslog(3, "stats socket '%s' initialization failed: %s", SOCK_PATH, strerror(errno));
+	syslog(3, "stats socket '%s' initialization failed: %s", g_socket_path, strerror(errno));
 
 remote.sun_family = AF_UNIX;
-strcpy(remote.sun_path, SOCK_PATH);
+strcpy(remote.sun_path, g_socket_path);
 len = strlen(remote.sun_path) + sizeof(remote.sun_family);
 if (connect(stats_socket_fd, (struct sockaddr *)&remote, len) == -1) {
-	syslog(3, "stats socket '%s' connection failed: %s", SOCK_PATH, strerror(errno));
+	syslog(3, "stats socket '%s' connection failed: %s", g_socket_path, strerror(errno));
 	close(stats_socket_fd);
 	stats_socket_fd = -1;
 }
@@ -126,7 +161,7 @@ char logfile[PATH_MAX];
 if(logfile_fd >= 0) {
 	close(logfile_fd);
 }
-snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d",CACHEDIR,REWRITEDIR,getpid());
+snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d",g_cache_dir,g_rewrite_dir,getpid());
 if((logfile_fd = creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
 		return;
 	}
@@ -157,7 +192,7 @@ if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1) {
 			return -1;
 } 
 
-if(srcstat->st_size < MAXFILESIZE) {
+if(srcstat->st_size < g_maxfilesize) {
 	ssize_t total_read = 0,n_read = 0,n_write = 0;
 	while(total_read < srcstat->st_size) {
 		n_read = read(fd_src,copybuf,sizeof(copybuf));
@@ -301,7 +336,7 @@ struct utimbuf dtime;
 if(real_xstat(1,cpath,&cachepathstat) == -1) {
 	path_bn = strrchr(ppath,'/');
 	cache_bn = strrchr(cpath,'/');
-	if(real_xstat(1,ppath,&pathstat) == -1) {
+if(real_xstat(1,ppath,&pathstat) == -1) {
 		return -2;
 		/* part of source path is missing. this should not happend */
 	}
@@ -344,7 +379,7 @@ void copy_entry(const char *oldpath,int oldfd,const struct stat *oldstat, const 
 			return;
 	}
 	*/
-	if(strncmp(oldpath,cachepath + strlen(CACHEDIR), strlen(cachepath) )){
+	if(strncmp(oldpath,cachepath + strlen(g_cache_dir), strlen(g_cache_dir) )){
 		/* name of file/dir is not same */
 			return;
 	}
@@ -363,7 +398,7 @@ int whiteout_check(const char *argpath)
 {
 int ret = 0;
 char cachepath[PATH_MAX];
-snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",CACHEDIR,argpath);
+snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,argpath);
 ret = real_access(cachepath,F_OK);
 if(!ret) {
 	return 0;

@@ -143,7 +143,7 @@ if ((stats_socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1)
 	syslog(3, "stats socket '%s' initialization failed: %s", g_socket_path, strerror(errno));
 
 remote.sun_family = AF_UNIX;
-strcpy(remote.sun_path, g_socket_path);
+strncpy(remote.sun_path, g_socket_path,PATH_MAX);
 len = strlen(remote.sun_path) + sizeof(remote.sun_family);
 if (connect(stats_socket_fd, (struct sockaddr *)&remote, len) == -1) {
 	syslog(3, "stats socket '%s' connection failed: %s", g_socket_path, strerror(errno));
@@ -227,7 +227,7 @@ char *dup_wpath;
 int ret = 0;
 if(strstr(wpath,".whiteout"))
 	return;
-strcpy(wpath + strlen(wpath),".whiteout");
+strcat(wpath,".whiteout");
 dup_wpath = strdup(wpath);
 if(!dup_wpath)
 	return;

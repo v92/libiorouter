@@ -144,7 +144,7 @@ int open(const char *argpath,int flags,...)
 	char cachepath[PATH_MAX];
 	char *path = NULL;
 
-	strncpy(cachepath,g_cache_dir,PATH_MAX);
+	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 	path = normalize_path(argpath,strlen(argpath));
 
@@ -212,7 +212,7 @@ DIR *opendir(const char *argpath)
 	char cachepath[PATH_MAX];
 	char *path;
 
-	strncpy(cachepath,g_cache_dir,PATH_MAX);
+	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 	path = normalize_path(argpath,strlen(argpath));
 
@@ -278,7 +278,7 @@ int faccessat(int dirfd,const char *argpath,int mode,int flags)
 	char *path = NULL;
 	char cachepath[PATH_MAX];
 
-	strncpy(cachepath,g_cache_dir,PATH_MAX);
+	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 	if(dirfd == AT_FDCWD) {
 		int ret = 0,ret2 = 0;
@@ -325,7 +325,7 @@ int access(const char *argpath,int mode)
 	char cachepath[PATH_MAX];
 	int ret = 0,ret2 = 0;
 
-	strncpy(cachepath,g_cache_dir,PATH_MAX);
+	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 	path = normalize_path(argpath,strlen(argpath));
 
@@ -368,7 +368,7 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
@@ -395,7 +395,7 @@ int unlinkat(int dirfd,const char *argpath,int flags)
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
@@ -426,7 +426,7 @@ int fchmodat(int dirfd,const char *argpath,mode_t mode,int flags)
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
@@ -458,7 +458,7 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
@@ -486,7 +486,7 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
@@ -513,7 +513,7 @@ int fchownat(int dirfd,const char *argpath, uid_t owner, gid_t group,int flags)
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
@@ -544,7 +544,7 @@ int ret;
 char *path = NULL;
 char cachepath[PATH_MAX];
 
-strncpy(cachepath,g_cache_dir,PATH_MAX);
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;

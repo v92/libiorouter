@@ -94,10 +94,14 @@ if((tmp = getenv("LIBIOR_MAXFILESIZE")) != NULL)
 else
 	g_maxfilesize = DEFAULT_MAXFILESIZE;
 
+if((tmp = getenv("LIBIOR_IO_OFF")) != NULL)
+	io_on_off = atoi(tmp) == 1 ? 0 : 1;
+
 syslog(3, "libiorouter: stats socket set to '%s'", g_socket_path);
 syslog(3, "libiorouter: cache dir set to '%s'", g_cache_dir);
 syslog(3, "libiorouter: rewrite dir set to '%s'", g_rewrite_dir);
 syslog(3, "libiorouter: max file size set to '%d'", (int) g_maxfilesize);
+syslog(3, "libiorouter: IO routing is %s", io_on_off == 1 ? "on": "off");
 return;
 }
 

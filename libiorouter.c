@@ -303,7 +303,8 @@ if(dfd) {
 		goto cleanup;
 
 	while(1) {
-		readdir_r(dfd,prev_dirp,&dirp);
+		if(readdir_r(dfd,prev_dirp,&dirp))
+			goto cleanup;
 		if(!dirp)
 			goto cleanup;
 

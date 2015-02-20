@@ -15,7 +15,7 @@
 #define INITSTR "libiorouter has been inicialized.\n"
 
 #define REDIRCHECK(funcstr,func,...) \
-	if(!path || !io_on_off || strstr(path,".snapshot")) { \
+	if(!path || strstr(path,".snapshot")) { \
                 LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
                 return func(__VA_ARGS__); \
         } \
@@ -38,7 +38,7 @@
 	gettimeofday(&sec,NULL); \
 	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
 	if(stats_socket_fd != -1 && (log_attr & L_STATS)) \
-		(void) send(stats_socket_fd, msg, n_msg, 0); \
+		(void) sendto(stats_socket_fd, msg, n_msg, 0 , (struct sockaddr *) &udps, sizeof(udps)); \
 	if(logfile_fd != -1 && (log_attr & L_JOURNAL)) \
 		(void) write(logfile_fd,msg,n_msg); \
 	}

@@ -37,6 +37,7 @@ int io_on_off = 1;	/* 0 - io routing off, 1 - io routing on */
 
 int logfile_fd = -1;
 int stats_socket_fd = -1;
+struct sockaddr_in udps;
 
 char *g_socket_path = NULL;
 char *g_cache_dir = NULL;
@@ -142,7 +143,15 @@ return;
 
 void socket_init(void)
 {
-int len;
+if ((stats_socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) 
+	syslog(3, "stats socket '%s' initialization failed: %s", g_socket_path, strerror(errno));
+
+memset((char *) &udps, 0, sizeof(udps));
+udps.sin_family = AF_INET;
+udps.sin_port = htons(12345);
+inet_aton("127.0.0.1", &udps.sin_addr);
+     
+/*
 struct sockaddr_un remote;
 
 if ((stats_socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 
@@ -156,7 +165,7 @@ if (connect(stats_socket_fd, (struct sockaddr *)&remote, len) == -1) {
 	close(stats_socket_fd);
 	stats_socket_fd = -1;
 }
-
+*/
 return;
 }
 

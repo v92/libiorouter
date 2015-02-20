@@ -31,6 +31,7 @@ extern int io_on_off;	/* 0 - io routing off, 1 - io routing on */
 
 extern int logfile_fd;
 extern int stats_socket_fd;
+extern struct sockaddr_in udps;
 
 extern char *g_socket_path;
 extern char *g_cache_dir;

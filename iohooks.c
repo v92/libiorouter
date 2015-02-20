@@ -221,9 +221,8 @@ DIR *opendir(const char *argpath)
 
 	REDIRCHECK("opendir",real_opendir,path);
 
-	if(!whiteout_check(path)) {
+	if(!whiteout_check(path)) 
 		goto cleanup;
-	}
 
 	strncat(cachepath,path,sizeof(cachepath)-1);
 	ret = real_opendir(cachepath);
@@ -233,19 +232,20 @@ DIR *opendir(const char *argpath)
 			ret2 = ret;
 			goto cleanup;
 		}
-		readdir_r(ret,prev_dirp,&dirp);	 /* . */
-		readdir_r(ret,prev_dirp,&dirp);	 /* .. */
-		if(readdir_r(ret,prev_dirp,&dirp)) {
+		if(readdir_r(ret,prev_dirp,&dirp)) 	 /* . */
+			goto cleanup;
+		if(readdir_r(ret,prev_dirp,&dirp)) 	 /* .. */
+			goto cleanup;
+
+		if(!readdir_r(ret,prev_dirp,&dirp)) {
 			seekdir(ret,0);
-			LOGSEND(0, "H %s %s","opendir",path); 
+			LOGSEND(0, "HIT %s %s","opendir",path); 
 			ret2 = ret; 
-			free(prev_dirp);
 			goto cleanup;
 		}
-		free(prev_dirp);
 	} 
 	ret2 = real_opendir(path);
-	LOGSEND(0, "M %s %s","opendir",path); 
+	LOGSEND(0, "MISS %s %s","opendir",path); 
 #ifdef RWCACHE
 	if(!ret) {
 		struct stat oldstat;
@@ -256,6 +256,7 @@ DIR *opendir(const char *argpath)
 	}
 #endif
 cleanup:
+	free(prev_dirp);
 	free(path);
 	return ret2;
 }

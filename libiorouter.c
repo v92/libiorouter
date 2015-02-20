@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -288,15 +289,24 @@ return ret;
 
 int copy_dir_entries(const char *oldpath, const char *cachepath)
 {
-DIR *dirfd;
-struct dirent *dirp;
+DIR *dfd;
+struct dirent *dirp = NULL;
+struct dirent *prev_dirp = NULL;
 struct stat htstat;
 char full_path[PATH_MAX];
 char new_oldpath[PATH_MAX];
 char *full_name;
-dirfd = real_opendir(oldpath);
-if(dirfd) {
-	while((dirp = readdir(dirfd)) != NULL) {
+dfd = real_opendir(oldpath);
+if(dfd) {
+	prev_dirp =  (struct dirent *) malloc(offsetof(struct dirent, d_name) + fpathconf(dirfd(dfd),_PC_NAME_MAX) + 1);
+	if(!prev_dirp)
+		goto cleanup;
+
+	while(1) {
+		readdir_r(dfd,prev_dirp,&dirp);
+		if(!dirp)
+			goto cleanup;
+
 		full_name = dirp->d_name;
 		if(!strcmp(full_name,".") || !strcmp(full_name,".."))
 			continue;
@@ -320,8 +330,10 @@ if(dirfd) {
 		}
 	}
 }
-closedir(dirfd);
-return 0;
+cleanup:
+	free(prev_dirp);
+	closedir(dfd);
+	return 0;
 }
 
 int copy_recursive_exec(const char *oldpath, const char *cachepath)

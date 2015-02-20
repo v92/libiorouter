@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -211,6 +212,8 @@ DIR *opendir(const char *argpath)
 	DIR *ret = NULL,*ret2 = NULL;
 	char cachepath[PATH_MAX];
 	char *path;
+	struct dirent *dirp = NULL;
+	struct dirent *prev_dirp = NULL;
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
@@ -225,14 +228,21 @@ DIR *opendir(const char *argpath)
 	strncat(cachepath,path,sizeof(cachepath)-1);
 	ret = real_opendir(cachepath);
 	if (ret) { 
-		readdir(ret);	 /* . */
-		readdir(ret);	 /* .. */	
-		if(readdir(ret)) {
+		prev_dirp =  (struct dirent *) malloc(offsetof(struct dirent, d_name) + fpathconf(dirfd(ret),_PC_NAME_MAX) + 1);
+		if(!prev_dirp) {
+			ret2 = ret;
+			goto cleanup;
+		}
+		readdir_r(ret,prev_dirp,&dirp);	 /* . */
+		readdir_r(ret,prev_dirp,&dirp);	 /* .. */
+		if(readdir_r(ret,prev_dirp,&dirp)) {
 			seekdir(ret,0);
 			LOGSEND(0, "H %s %s","opendir",path); 
 			ret2 = ret; 
+			free(prev_dirp);
 			goto cleanup;
 		}
+		free(prev_dirp);
 	} 
 	ret2 = real_opendir(path);
 	LOGSEND(0, "M %s %s","opendir",path); 

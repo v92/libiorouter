@@ -19,21 +19,26 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define _GNU_SOURCE /* memrchr() */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <fcntl.h>
+
 
 /* lstat-less realpath version */
-char * normalize_path(const char * src) {
-
+char * normalize_pathat(int dirfd,const char * src)
+{
         char * res;
         size_t res_len;
         size_t src_len;
+	size_t pwd_len;
 	
         const char * ptr;
         const char * end;
         const char * next;
+	char pwd[PATH_MAX];
 	
 	if(!src)	
 		return NULL;
@@ -43,17 +48,18 @@ char * normalize_path(const char * src) {
         end = &src[src_len];
 
         if (src[0] != '/') {
+		if(dirfd == AT_FDCWD) {
+			if (getcwd(pwd, sizeof(pwd)) == NULL) 
+				return NULL;
+			pwd_len = strlen(pwd);
+		} else {
+			char lnkpth[PATH_MAX];
+			snprintf(lnkpth,PATH_MAX,"/proc/%d/fd/%d",getpid(),dirfd);
+			if((pwd_len = readlink(lnkpth,pwd,PATH_MAX - 1)) == -1) 
+				return NULL;
+			lnkpth[pwd_len] = '\0';
+		}
 
-                /* relative path */
-
-                char pwd[PATH_MAX];
-                size_t pwd_len;
-
-                if (getcwd(pwd, sizeof(pwd)) == NULL) {
-                        return NULL;
-                }
-
-                pwd_len = strlen(pwd);
                 res = malloc(pwd_len + 1 + src_len + 1);
                 memcpy(res, pwd, pwd_len);
                 res_len = pwd_len;
@@ -98,6 +104,11 @@ char * normalize_path(const char * src) {
         }
         res[res_len] = '\0';
         return res;
+}
+
+char * normalize_path(const char * src)
+{
+	return normalize_pathat(AT_FDCWD,src);
 }
 
 char *libio_realpath(const char * src)

@@ -90,7 +90,7 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 	int n; 
 	struct stat cachestat;
 
-	path = normalize_path(argpath,strlen(argpath));
+	path = normalize_path(argpath);
 
 	REDIRCHECK("__xstat",real_xstat,ver,path,buf);
 
@@ -147,7 +147,7 @@ int open(const char *argpath,int flags,...)
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
-	path = normalize_path(argpath,strlen(argpath));
+	path = normalize_path(argpath);
 
 	REDIRCHECK("open",real_open,path,flags);
 
@@ -216,7 +216,7 @@ DIR *opendir(const char *argpath)
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
-	path = normalize_path(argpath,strlen(argpath));
+	path = normalize_path(argpath);
 
 	REDIRCHECK("opendir",real_opendir,path);
 
@@ -291,8 +291,8 @@ int faccessat(int dirfd,const char *argpath,int mode,int flags)
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
-	if(io_on_off && dirfd == AT_FDCWD) {
-		path = normalize_path(argpath,strlen(argpath));
+	if(io_on_off) {
+		path = normalize_pathat(dirfd,argpath);
 
 		REDIRCHECK("faccessat",real_faccessat,dirfd,path,mode,flags);
 
@@ -333,7 +333,7 @@ int access(const char *argpath,int mode)
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
-	path = normalize_path(argpath,strlen(argpath));
+	path = normalize_path(argpath);
 
 	REDIRCHECK("access",real_access,path,mode);
 
@@ -379,7 +379,7 @@ if(!argpath)
 	return -1;
 
 if(io_on_off) {
-	path = normalize_path(argpath,strlen(argpath));
+	path = normalize_path(argpath);
 	REDIRCHECK("unlink",real_unlink,path);
 
 	strncat(cachepath,path,sizeof(cachepath)-1);
@@ -405,21 +405,18 @@ strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 if(!argpath)
 	return -1;
 
+path = normalize_pathat(dirfd,argpath);
+REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
 
-if(dirfd == AT_FDCWD) {
+strncat(cachepath,path,sizeof(cachepath)-1);
 
-	path = normalize_path(argpath,strlen(argpath));
-	REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
+ret = real_unlinkat(dirfd,cachepath,flags);
+if(io_on_off && ret == -1)
+	LOGSEND(L_STATS, "FAIL unlinkat %s",cachepath);
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",path);
+free(path);
 
-	strncat(cachepath,path,sizeof(cachepath)-1);
-
-	ret = real_unlinkat(dirfd,cachepath,flags);
-	if(io_on_off && ret == -1)
-		LOGSEND(L_STATS, "FAIL unlinkat %s",cachepath);
-	if(ret == 0)
-		LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",path);
-	free(path);
-} 
 return real_unlinkat(dirfd,argpath,flags);
 }
 
@@ -427,28 +424,27 @@ int fchmodat(int dirfd,const char *argpath,mode_t mode,int flags)
 {
 char *path = NULL;
 char cachepath[PATH_MAX];
+int ret;
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
 
-if(dirfd == AT_FDCWD) {
-	int ret;
-	path = normalize_path(argpath,strlen(argpath));
+path = normalize_pathat(dirfd,argpath);
 
-	REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
+REDIRCHECK("fchmodat",real_fchmodat,dirfd,path,mode,flags);
 
-	strncat(cachepath,path,sizeof(cachepath)-1);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
-	ret = real_fchmodat(dirfd,cachepath,mode,flags);
-	if(ret == -1)
-		LOGSEND(L_STATS, "FAIL fchmodat %s",cachepath);
-	if(ret == 0)
-		LOGSEND(L_JOURNAL|L_STATS, "HIT fchmodat %s",cachepath);
+ret = real_fchmodat(dirfd,cachepath,mode,flags);
+if(ret == -1)
+	LOGSEND(L_STATS, "FAIL fchmodat %s",cachepath);
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT fchmodat %s",cachepath);
 
-	free(path);
-} 
+free(path);
+
 return real_fchmodat(dirfd,argpath,mode,flags);
 }
 
@@ -463,7 +459,7 @@ strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 if(!argpath)
 	return -1;
 
-path = normalize_path(argpath,strlen(argpath));
+path = normalize_path(argpath);
 
 REDIRCHECK("chmod",real_chmod,path,mode);
 
@@ -490,7 +486,7 @@ strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 if(!argpath)
 	return -1;
 
-path = normalize_path(argpath,strlen(argpath));
+path = normalize_path(argpath);
 
 REDIRCHECK("chown",real_chown,path,owner,group);
 
@@ -510,27 +506,27 @@ int fchownat(int dirfd,const char *argpath, uid_t owner, gid_t group,int flags)
 {
 char *path = NULL;
 char cachepath[PATH_MAX];
+	int ret;
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
-if(dirfd == AT_FDCWD) {
-	int ret;
-	path = normalize_path(argpath,strlen(argpath));
 
-	REDIRCHECK("fchownat",real_fchownat,dirfd,path,owner,group,flags);
+path = normalize_pathat(dirfd,argpath);
 
-	strncat(cachepath,path,sizeof(cachepath)-1);
+REDIRCHECK("fchownat",real_fchownat,dirfd,path,owner,group,flags);
 
-	ret = real_fchownat(dirfd,cachepath,owner,group,flags);
-	if(io_on_off && ret == -1)
-		LOGSEND(L_STATS, "FAIL fchownat %s",cachepath);
-	if(ret == 0)
-		LOGSEND(L_JOURNAL|L_STATS, "HIT fchownat %s",cachepath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
-	free(path);
-}
+ret = real_fchownat(dirfd,cachepath,owner,group,flags);
+if(io_on_off && ret == -1)
+	LOGSEND(L_STATS, "FAIL fchownat %s",cachepath);
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT fchownat %s",cachepath);
+
+free(path);
+
 return real_fchownat(dirfd,argpath,owner,group,flags);
 }
 
@@ -545,7 +541,7 @@ strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 if(!argpath)
 	return -1;
 
-path = normalize_path(argpath,strlen(argpath));
+path = normalize_path(argpath);
 
 REDIRCHECK("rmdir",real_rmdir,path);
 strncat(cachepath,path,sizeof(cachepath)-1);

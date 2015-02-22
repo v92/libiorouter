@@ -149,12 +149,14 @@ static void libiorouter_init(void)
 char commpath[PATH_MAX],comm[PATH_MAX];
 int commfd,n;
 HOOK("open",real_open);
+HOOK("creat",real_creat);
 HOOK("opendir",real_opendir);
 HOOK("chmod",real_chmod);
 HOOK("fchmodat",real_fchmodat);
 HOOK("chown",real_chown);
 HOOK("fchownat",real_fchownat);
 HOOK("realpath",real_realpath);
+HOOK("rename",real_rename);
 HOOK("unlink",real_unlink);
 HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);
@@ -227,7 +229,7 @@ if(logfile_fd >= 0) {
 	close(logfile_fd);
 }
 snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d",g_cache_dir,g_rewrite_dir,getpid());
-if((logfile_fd = creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
+if((logfile_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
 		return;
 	}
 write(logfile_fd,INITSTR,strlen(INITSTR));
@@ -249,9 +251,9 @@ if(oldfd < 0) {
 } else
 	fd_src = oldfd;
 
-if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1) {
+if((fd_dst = real_creat(dstfile,srcstat->st_mode)) == -1) {
 		if(!copy_recursive_dirs(srcfile,dstfile)) {
-			if((fd_dst = creat(dstfile,srcstat->st_mode)) == -1)
+			if((fd_dst = real_creat(dstfile,srcstat->st_mode)) == -1)
 				return -1;
 		} else 
 			return -1;
@@ -298,7 +300,7 @@ if(!dup_wpath)
 	return;
 create_path(dup_wpath);
 /* create whiteout */
-ret = creat(dup_wpath,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+ret = real_creat(dup_wpath,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 if(ret >= 0)
 	close(ret);
 free(dup_wpath);
@@ -376,7 +378,7 @@ if(dfd) {
 			continue;
 		snprintf(full_path,PATH_MAX,"%s/%s", cachepath, full_name);
 		int ofd;
-		ofd = creat(full_path,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+		ofd = real_creat(full_path,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
 		if(ofd >= 0) 
 			close(ofd);
 		if(!strcmp(full_name,".htaccess")) {

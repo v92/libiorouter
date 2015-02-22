@@ -39,6 +39,7 @@ extern size_t g_maxfilesize;
 extern char *g_rewrite_dir;
 
 extern int (*real_open)(const char *,int);
+extern int (*real_creat)(const char *,int);
 extern int (*real_xstat)(int,const char *,struct stat *);
 extern int (*real_xstat64)(int,const char *,struct stat64 *);
 extern int (*real_fxstatat)(int,int,const char *,struct stat *,int);
@@ -46,6 +47,7 @@ extern char *(*real_realpath)(const char *, char *);
 extern char *(*real_realpath_chk)(const char *, char *, size_t);
 extern int (*real_lxstat)(int,const char *,struct stat *);
 extern int (*real_lxstat64)(int,const char *,struct stat64 *);
+extern int (*real_rename)(const char *,const char *);
 extern int (*real_unlink)(const char *);
 extern int (*real_unlinkat)(int,const char *,int);
 extern int (*real_chown)(const char *path, uid_t , gid_t );
@@ -142,6 +144,11 @@ cleanup:
 	return ret2;
 }
 
+int creat(const char *argpath, mode_t mode)
+{
+	return open(argpath,O_CREAT|O_WRONLY|O_TRUNC);
+}
+
 int open(const char *argpath,int flags,...)
 {
 	int ret = 0,ret2 = 0;
@@ -156,7 +163,7 @@ int open(const char *argpath,int flags,...)
 
 	/* special handling for session files */
 	if(strstr(path,"sess_") && flags & O_CREAT) {
-		ret2 = creat(path,S_IRUSR|S_IWUSR);
+		ret2 = real_creat(path,S_IRUSR|S_IWUSR);
 		goto cleanup;
 	}	
 	if(flags & (O_WRONLY | O_CREAT | O_TRUNC | O_DIRECTORY)) {

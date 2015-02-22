@@ -84,10 +84,13 @@ if(!tmp)
 prev_tmp = tmp;
 while((token = strtok_r(tmp, "|", &tmp))) {
 	if(!strncmp(comm,token,strlen(comm))) {
-		syslog(3, "libiorouter: commnd '%s' found in whitelist '%s'",comm,g_whitelist_regex);
+		syslog(3, "libiorouter: command '%s' found in whitelist '%s'",comm,g_whitelist_regex);
 		io_on_off = 1;	
+		free(prev_tmp);
+		return;
 	}
 }
+syslog(3, "libiorouter: command '%s' not found in whitelist '%s'",comm,g_whitelist_regex);
 free(prev_tmp);
 return;
 }
@@ -123,9 +126,13 @@ else
 
 set_io_by_comm(comm);
 
-if((tmp = getenv("LIBIOR_IO_OFF")) != NULL)
-	io_on_off = atoi(tmp) == 1 ? 0 : 1;
-
+if((tmp = getenv("LIBIOR_IO")) != NULL) {
+	if(!strcmp(tmp,"on"))
+		io_on_off = 1;
+	if(!strcmp(tmp,"off"))
+		io_on_off = 0;
+	syslog(3, "libiorouter: LIBIOR_IO env is overriding whitelist options, setting IO routing to '%s'",io_on_off == 1 ? "on": "off" );
+}
 syslog(3, "libiorouter: stats socket set to '%s'", g_socket_path);
 syslog(3, "libiorouter: cache dir set to '%s'", g_cache_dir);
 syslog(3, "libiorouter: rewrite dir set to '%s'", g_rewrite_dir);

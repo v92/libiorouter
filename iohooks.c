@@ -608,6 +608,7 @@ if(!argpath)
 path = normalize_path(argpath);
 
 snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path);
+free(path);
 ret = real_access(cachepath,F_OK);
 if(!ret)
 	(void) real_unlink(cachepath);
@@ -621,7 +622,6 @@ if(io_on_off && ret == -1)
 if(ret == 0)
 	LOGSEND(L_JOURNAL|L_STATS, "HIT mkdir %s",cachepath);
 
-free(path);
 return real_mkdir(argpath,mode);
 }
 

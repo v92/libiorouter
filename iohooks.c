@@ -75,10 +75,12 @@ int __xstat64(int ver,const char *argpath,struct stat64 *buf)
 
 int __fxstatat(int ver,int dirfd,const char *argpath,struct stat *buf,int flags)
 {
-	if(dirfd == AT_FDCWD)
-		return __xstat(ver,argpath,buf);
-	else
-		return real_fxstatat(ver,dirfd,argpath,buf,flags);
+	char *path = NULL;
+	int ret;
+	path = normalize_pathat(dirfd,argpath);
+	ret = __xstat(ver,path,buf);
+	free(path);
+	return ret;
 }
 
 int __xstat(int ver,const char *argpath,struct stat *buf)
@@ -259,26 +261,56 @@ cleanup:
 	free(path);
 	return ret2;
 }
-/*
-int openat(int dirfd,const char *path,int flags,...)
-{
-	int ret = 0,ret2 = 0;
-	char cachepath[PATH_MAX];
-	struct stat oldstat;
 
-	LOGSEND(0, "CALL openat %s",path);
-	REDIRCHECK("openat",real_openat,dirfd,path,flags);
-	
-	ret2 = real_openat(dirfd,path,flags);
-#ifdef RWCACHE
-	if(io_on_off && io_on_off && ret == -1) {
-		if(ret2 > 0 && !fstat(ret2,&oldstat))
-			copy_entry(path,ret2,&oldstat,cachepath);
+/*
+int openat(int dirfd,const char *argpath,int flags,...)
+{
+	char *path = NULL;
+	char cachepath[PATH_MAX];
+	struct stat cachestat;
+	int ret = 0,ret2 = 0;
+
+	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
+
+	if(io_on_off) {
+		path = normalize_pathat(dirfd,argpath);
+
+		REDIRCHECK("openat",real_openat,dirfd,path,flags);
+
+		if(!whiteout_check(path)) {
+			ret2 = -1;
+			goto cleanup;
+		}
+
+		strncat(cachepath,path,sizeof(cachepath)-1);
+		ret = real_openat(dirfd,cachepath,flags);
+		if (ret >= 0) { 
+			struct stat cachestat;
+			(void) fstat(ret,&cachestat);
+			if(S_ISREG(cachestat.st_mode) && cachestat.st_size == 0) { 
+				struct stat buf;
+				if(!real_xstat(1,path,&buf))
+					copy_entry(path,-1,&buf,cachepath); 
+				goto miss;
+			}
+			LOGSEND(L_STATS, "HIT %s %s","open",cachepath); 
+			ret2 = ret;
+			goto cleanup;
+		} else 
+			LOGSEND(L_STATS, "MISS %s %s","open",cachepath); 
+	}
+
+	ret2 = real_openat(dirfd,argpath,mode,flags);
+	if(io_on_off && ret == -1) {
+		struct stat buf;
+		real_xstat(1,argpath,&buf);
+		copy_entry(argpath,-1,(struct stat *) &buf,cachepath);
 		if(ret2 == -1) {
 			create_whiteout(cachepath);
 		}
 	}
-#endif
+cleanup:
+	free(path);
 	return ret2;
 }
 */
@@ -407,15 +439,14 @@ if(!argpath)
 
 path = normalize_pathat(dirfd,argpath);
 REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
-
 strncat(cachepath,path,sizeof(cachepath)-1);
+free(path);
 
 ret = real_unlinkat(dirfd,cachepath,flags);
 if(io_on_off && ret == -1)
 	LOGSEND(L_STATS, "FAIL unlinkat %s",cachepath);
 if(ret == 0)
 	LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",path);
-free(path);
 
 return real_unlinkat(dirfd,argpath,flags);
 }

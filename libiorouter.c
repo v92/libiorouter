@@ -160,6 +160,7 @@ HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);
 HOOK("faccess",real_faccessat);
 HOOK("rmdir",real_rmdir);
+HOOK("mkdir",real_mkdir);
 	
 HOOK("__xstat",real_xstat);
 HOOK("__xstat64",real_xstat64);

@@ -317,7 +317,7 @@ path_bn = strrchr(path,'/');
 if(real_xstat(1,path,&spath) == -1) {
 	int id;
         id = create_path(path);
-	if(id == -1 || mkdir(path,0755))
+	if(id == -1 || real_mkdir(path,0755))
 		return -1;
 	*path_bn = '/';
 	return id;
@@ -388,7 +388,7 @@ if(dfd) {
 			
 		/*
 		if(dirp->d_type == DT_DIR) {
-			(void) mkdir(full_path,040711);
+			(void) real_mkdir(full_path,040711);
 			snprintf(new_oldpath,PATH_MAX,"%s/%s", oldpath, full_name);
 			copy_dir_entries(new_oldpath,full_path);
 		}
@@ -426,7 +426,7 @@ if(real_xstat(1,ppath,&pathstat) == -1) {
 	*path_bn = '/';
 	*cache_bn = '/';
 	if(S_ISDIR(pathstat.st_mode)) {
-		if(!mkdir(cpath,040711)) {
+		if(!real_mkdir(cpath,040711)) {
 			dtime.actime = pathstat.st_atime;
 			dtime.modtime = pathstat.st_mtime;
 			utime(cpath,&dtime);

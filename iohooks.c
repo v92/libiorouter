@@ -55,7 +55,7 @@ extern int (*real_fchmodat)(int,const char *, mode_t,int);
 extern int (*real_rmdir)(const char *path);
 extern int (*real_access)(const char *, int);
 extern int (*real_faccessat)(int,const char *, int,int);
-extern int (*real_mkdir)(const char *);
+extern int (*real_mkdir)(const char *,mode_t);
 extern DIR *(*real_opendir)(const char *);
 
 
@@ -596,15 +596,16 @@ char cachepath[PATH_MAX];
 if(!argpath)
 	return -1;
 
+
 path = normalize_path(argpath);
 
 snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path);
 ret = real_access(cachepath,F_OK);
 if(!ret)
-	real_rmdir(cachepath);
+	(void) real_unlink(cachepath);
 
+REDIRCHECK("mkdir",real_mkdir,argpath,mode);
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-REDIRCHECK("mkdir",real_mkdir,path,mode);
 strncat(cachepath,path,sizeof(cachepath)-1);
 ret = real_mkdir(cachepath,mode);
 if(io_on_off && ret == -1)

@@ -147,7 +147,7 @@ cleanup:
 
 int creat(const char *argpath, mode_t mode)
 {
-	return open(argpath,O_CREAT|O_WRONLY|O_TRUNC);
+	return open(argpath,O_CREAT|O_WRONLY|O_TRUNC,S_IRWXU);
 }
 
 int open(const char *argpath,int flags,...)

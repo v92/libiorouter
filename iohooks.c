@@ -440,12 +440,19 @@ char *path = NULL;
 char cachepath[PATH_MAX];
 int ret;
 
-strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
 
 path = normalize_pathat(dirfd,argpath);
+
+snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path);
+ret = real_access(cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(cachepath);
+
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
+
 REDIRCHECK("unlinkat",real_unlinkat,dirfd,path,flags);
 strncat(cachepath,path,sizeof(cachepath)-1);
 free(path);

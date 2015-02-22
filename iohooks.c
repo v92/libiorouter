@@ -55,6 +55,7 @@ extern int (*real_fchmodat)(int,const char *, mode_t,int);
 extern int (*real_rmdir)(const char *path);
 extern int (*real_access)(const char *, int);
 extern int (*real_faccessat)(int,const char *, int,int);
+extern int (*real_mkdir)(const char *);
 extern DIR *(*real_opendir)(const char *);
 
 
@@ -583,6 +584,36 @@ if(ret == 0)
 
 free(path);
 return real_rmdir(argpath);
+}
+
+int mkdir(const char *argpath,mode_t mode)
+{
+int ret;
+char *path = NULL;
+char cachepath[PATH_MAX];
+
+
+if(!argpath)
+	return -1;
+
+path = normalize_path(argpath);
+
+snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path);
+ret = real_access(cachepath,F_OK);
+if(!ret)
+	real_rmdir(cachepath);
+
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
+REDIRCHECK("mkdir",real_mkdir,path,mode);
+strncat(cachepath,path,sizeof(cachepath)-1);
+ret = real_mkdir(cachepath,mode);
+if(io_on_off && ret == -1)
+	LOGSEND(L_STATS, "FAIL mkdir %s",cachepath);
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT mkdir %s",cachepath);
+
+free(path);
+return real_mkdir(argpath,mode);
 }
 
 char *realpath(const char *path, char *resolved_path)

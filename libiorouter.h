@@ -5,6 +5,7 @@
 #define DEFAULT_CACHEDIR "/run"
 #define DEFAULT_REWRITEDIR "/nfsmnt"
 #define DEFAULT_MAXFILESIZE 10485760
+#define DEFAULT_WHITELIST "wsapache24-phpx|wsapache22-phpx|wsapache22-static|wsapache24-static|hhvm|proftpd"
 
 #define COPY_BUFFER_SIZE 65536
 

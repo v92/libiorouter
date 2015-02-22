@@ -22,6 +22,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <syslog.h>
+#include <ctype.h>
+#include <regex.h>
 
 #include "libiorouter.h"
 #include "iohooks.h"
@@ -33,7 +35,7 @@
 
 int debug_on_off = 1;	/* 0 - debug off, 1 - debug on */
 int trace_on_off = 1;	/* 0 - trace off, 1 - trace on */
-int io_on_off = 1;	/* 0 - io routing off, 1 - io routing on */
+int io_on_off = 0;	/* 0 - io routing off, 1 - io routing on */
 
 int logfile_fd = -1;
 int stats_socket_fd = -1;
@@ -43,6 +45,7 @@ char *g_socket_path = NULL;
 char *g_cache_dir = NULL;
 size_t g_maxfilesize = 0;
 char *g_rewrite_dir = NULL;
+char *g_whitelist_regex = NULL;
 
 void ioonoff(int signum)
 {
@@ -71,7 +74,25 @@ if(debug_on_off == 0)
 	debug_on_off = 1;
 }
 
-void init_global_vars(void)
+void set_io_by_comm(const char *comm)
+{
+char *tmp = strdup(g_whitelist_regex);
+char *prev_tmp;
+char *token;
+if(!tmp)
+	return;
+prev_tmp = tmp;
+while((token = strtok_r(tmp, "|", &tmp))) {
+	if(!strncmp(comm,token,strlen(comm))) {
+		syslog(3, "libiorouter: commnd '%s' found in whitelist '%s'",comm,g_whitelist_regex);
+		io_on_off = 1;	
+	}
+}
+free(prev_tmp);
+return;
+}
+
+void init_global_vars(const char *comm)
 {
 char *tmp;
 
@@ -95,6 +116,13 @@ if((tmp = getenv("LIBIOR_MAXFILESIZE")) != NULL)
 else
 	g_maxfilesize = DEFAULT_MAXFILESIZE;
 
+if((tmp = getenv("LIBIOR_WHITELIST_REGEX")) != NULL)
+	g_whitelist_regex = strdup(tmp);
+else
+	g_whitelist_regex = DEFAULT_WHITELIST;
+
+set_io_by_comm(comm);
+
 if((tmp = getenv("LIBIOR_IO_OFF")) != NULL)
 	io_on_off = atoi(tmp) == 1 ? 0 : 1;
 
@@ -102,6 +130,7 @@ syslog(3, "libiorouter: stats socket set to '%s'", g_socket_path);
 syslog(3, "libiorouter: cache dir set to '%s'", g_cache_dir);
 syslog(3, "libiorouter: rewrite dir set to '%s'", g_rewrite_dir);
 syslog(3, "libiorouter: max file size set to '%d'", (int) g_maxfilesize);
+syslog(3, "libiorouter: IO routing whitelist '%s'", g_whitelist_regex);
 syslog(3, "libiorouter: IO routing is %s", io_on_off == 1 ? "on": "off");
 return;
 }
@@ -132,15 +161,16 @@ HOOK("__realpath_chk",real_realpath_chk);
 HOOK("__lxstat",real_lxstat);
 HOOK("__lxstat64",real_lxstat64);
 
+memset(comm,'\0',sizeof(comm));
 snprintf(commpath,PATH_MAX,"/proc/%d/comm",getpid());
-commfd = open(commpath,O_RDONLY);
+commfd = real_open(commpath,O_RDONLY);
 if(commfd >= 0) {
-	read(commfd,&comm,sizeof(comm));	
+	read(commfd,(char *) &comm,sizeof(comm));
 	close(commfd);
+	comm[strlen(comm)-1] = '\0';
+	syslog(3, "libiorouter: my name is '%s'", comm);
 }
-
-syslog(3, "libiorouter: my name is '%s'", comm);
-init_global_vars();
+init_global_vars(comm);
 reinit_log_file(SIGPROF);
 signal(SIGTTIN,traceonoff);	
 signal(SIGTTOU,debugonoff);	

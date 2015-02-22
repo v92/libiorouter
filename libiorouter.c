@@ -147,7 +147,7 @@ static void libiorouter_init(void) __attribute__ ((constructor));
 static void libiorouter_init(void) 
 {
 char commpath[PATH_MAX],comm[PATH_MAX];
-int commfd;
+int commfd,n;
 HOOK("open",real_open);
 HOOK("opendir",real_opendir);
 HOOK("chmod",real_chmod);
@@ -160,6 +160,7 @@ HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);
 HOOK("faccess",real_faccessat);
 HOOK("rmdir",real_rmdir);
+HOOK("mkdir",real_mkdir);
 	
 HOOK("__xstat",real_xstat);
 HOOK("__xstat64",real_xstat64);
@@ -168,13 +169,16 @@ HOOK("__realpath_chk",real_realpath_chk);
 HOOK("__lxstat",real_lxstat);
 HOOK("__lxstat64",real_lxstat64);
 
+memset(comm,'\0',sizeof(comm));
 snprintf(commpath,PATH_MAX,"/proc/%d/comm",getpid());
 commfd = real_open(commpath,O_RDONLY);
 if(commfd >= 0) {
-	read(commfd,(char *) &comm,sizeof(comm));
+	n = read(commfd,(char *) &comm,sizeof(comm));
 	close(commfd);
-	comm[strlen(comm)-1] = '\0';
-	syslog(3, "libiorouter: my name is '%s'", comm);
+	if(n >= 1) {
+		comm[n - 1] = '\0';
+		syslog(3, "libiorouter: my name is '%s'", comm);
+	}
 }
 init_global_vars(comm);
 reinit_log_file(SIGPROF);

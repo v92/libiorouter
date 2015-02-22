@@ -131,7 +131,7 @@ if((tmp = getenv("LIBIOR_IO")) != NULL) {
 		io_on_off = 1;
 	if(!strcmp(tmp,"off"))
 		io_on_off = 0;
-	syslog(3, "libiorouter: LIBIOR_IO env is overriding whitelist options, setting IO routing to '%s'",io_on_off == 1 ? "on": "off" );
+	syslog(3, "libiorouter: LIBIOR_IO env is overriding whitelist option, setting IO routing to '%s'",io_on_off == 1 ? "on": "off" );
 }
 syslog(3, "libiorouter: stats socket set to '%s'", g_socket_path);
 syslog(3, "libiorouter: cache dir set to '%s'", g_cache_dir);
@@ -168,7 +168,6 @@ HOOK("__realpath_chk",real_realpath_chk);
 HOOK("__lxstat",real_lxstat);
 HOOK("__lxstat64",real_lxstat64);
 
-memset(comm,'\0',sizeof(comm));
 snprintf(commpath,PATH_MAX,"/proc/%d/comm",getpid());
 commfd = real_open(commpath,O_RDONLY);
 if(commfd >= 0) {
@@ -372,23 +371,24 @@ if(dfd) {
 		if(!strcmp(full_name,".") || !strcmp(full_name,".."))
 			continue;
 		snprintf(full_path,PATH_MAX,"%s/%s", cachepath, full_name);
-		if(dirp->d_type == DT_REG || dirp->d_type == DT_UNKNOWN) {
-			int ofd;
-			ofd = creat(full_path,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
-			if(ofd >= 0) 
-				close(ofd);
-			if(!strcmp(full_name,".htaccess")) {
-				snprintf(new_oldpath,PATH_MAX,"%s/.htaccess", oldpath);
-				if(!real_xstat(1,new_oldpath,&htstat)) {
-					copy_file_contents(new_oldpath,-1,&htstat,full_path);
-				}
+		int ofd;
+		ofd = creat(full_path,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH);
+		if(ofd >= 0) 
+			close(ofd);
+		if(!strcmp(full_name,".htaccess")) {
+			snprintf(new_oldpath,PATH_MAX,"%s/.htaccess", oldpath);
+			if(!real_xstat(1,new_oldpath,&htstat)) {
+				copy_file_contents(new_oldpath,-1,&htstat,full_path);
 			}
 		}
+			
+		/*
 		if(dirp->d_type == DT_DIR) {
 			(void) mkdir(full_path,040711);
 			snprintf(new_oldpath,PATH_MAX,"%s/%s", oldpath, full_name);
-			/*copy_dir_entries(new_oldpath,full_path);*/
+			copy_dir_entries(new_oldpath,full_path);
 		}
+		*/
 	}
 }
 cleanup:

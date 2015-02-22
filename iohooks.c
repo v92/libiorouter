@@ -234,14 +234,13 @@ DIR *opendir(const char *argpath)
 				ret2 = ret;
 				goto cleanup;
 			}
-			if(readdir_r(ret,prev_dirp,&dirp)) 	 /* . */
-				goto cleanup;
-			if(readdir_r(ret,prev_dirp,&dirp)) 	 /* .. */
-				goto cleanup;
+			(void) readdir_r(ret,prev_dirp,&dirp); 	 /* . */
+			(void) readdir_r(ret,prev_dirp,&dirp);	 /* .. */
+			(void) readdir_r(ret,prev_dirp,&dirp);   /* 1st dir entry  */
 
-			if(!readdir_r(ret,prev_dirp,&dirp)) {
+			if(dirp) {
 				seekdir(ret,0);
-				LOGSEND(0, "HIT %s %s","opendir",path); 
+				LOGSEND(L_STATS, "HIT %s %s","opendir",path); 
 				ret2 = ret; 
 				goto cleanup;
 			}
@@ -446,7 +445,7 @@ ret = real_unlinkat(dirfd,cachepath,flags);
 if(io_on_off && ret == -1)
 	LOGSEND(L_STATS, "FAIL unlinkat %s",cachepath);
 if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",path);
+	LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",cachepath);
 
 return real_unlinkat(dirfd,argpath,flags);
 }

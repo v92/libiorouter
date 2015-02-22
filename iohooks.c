@@ -48,6 +48,7 @@ extern char *(*real_realpath_chk)(const char *, char *, size_t);
 extern int (*real_lxstat)(int,const char *,struct stat *);
 extern int (*real_lxstat64)(int,const char *,struct stat64 *);
 extern int (*real_rename)(const char *,const char *);
+extern int (*real_renameat)(int,const char *,int,const char *);
 extern int (*real_unlink)(const char *);
 extern int (*real_unlinkat)(int,const char *,int);
 extern int (*real_chown)(const char *path, uid_t , gid_t );
@@ -622,6 +623,88 @@ if(ret == 0)
 
 free(path);
 return real_mkdir(argpath,mode);
+}
+
+int rename(const char *oldpath,const char *newpath)
+{
+char *old_normpath = NULL;
+char *new_normpath = NULL;
+char old_cachepath[PATH_MAX];
+char new_cachepath[PATH_MAX];
+int ret,n;
+
+old_normpath = normalize_path(oldpath);
+if(!old_normpath)
+	goto cleanup;
+
+n = snprintf((char *) &old_cachepath,sizeof(old_cachepath),"%s%s.whiteout",g_cache_dir,old_normpath);
+ret = real_access(old_cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(old_cachepath);
+old_cachepath[n - sizeof(".whiteout") + 1] = '\0';
+
+new_normpath = normalize_path(newpath);
+if(!new_normpath)
+	goto cleanup;
+
+n = snprintf((char *) &new_cachepath,sizeof(new_cachepath),"%s%s.whiteout",g_cache_dir,new_normpath);
+ret = real_access(new_cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(new_cachepath);
+
+new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
+ret = real_rename(old_cachepath,new_cachepath);
+if(io_on_off && ret == -1)
+	LOGSEND(L_STATS, "FAIL rename %s %s",old_cachepath,new_cachepath);
+
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT rename %s %s",old_cachepath,new_cachepath);
+
+cleanup:
+	free(old_normpath);
+	free(new_normpath);
+	return real_rename(oldpath,newpath);
+}
+
+int renameat(int olddirfd,const char *oldpath,int newdirfd,const char *newpath)
+{
+char *old_normpath = NULL;
+char *new_normpath = NULL;
+char old_cachepath[PATH_MAX];
+char new_cachepath[PATH_MAX];
+int ret,n;
+
+old_normpath = normalize_pathat(olddirfd,oldpath);
+if(!old_normpath)
+	goto cleanup;
+
+n = snprintf((char *) &old_cachepath,sizeof(old_cachepath),"%s%s.whiteout",g_cache_dir,old_normpath);
+ret = real_access(old_cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(old_cachepath);
+old_cachepath[n - sizeof(".whiteout") + 1] = '\0';
+
+new_normpath = normalize_pathat(newdirfd,newpath);
+if(!new_normpath)
+	goto cleanup;
+
+n = snprintf((char *) &new_cachepath,sizeof(new_cachepath),"%s%s.whiteout",g_cache_dir,new_normpath);
+ret = real_access(new_cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(new_cachepath);
+
+new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
+ret = real_rename(old_cachepath,new_cachepath);
+if(io_on_off && ret == -1)
+	LOGSEND(L_STATS, "FAIL renameat %s %s",old_cachepath,new_cachepath);
+
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT renameat %s %s",old_cachepath,new_cachepath);
+
+cleanup:
+	free(old_normpath);
+	free(new_normpath);
+	return real_renameat(olddirfd,oldpath,newdirfd,newpath);
 }
 
 char *realpath(const char *path, char *resolved_path)

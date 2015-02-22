@@ -157,6 +157,7 @@ HOOK("chown",real_chown);
 HOOK("fchownat",real_fchownat);
 HOOK("realpath",real_realpath);
 HOOK("rename",real_rename);
+HOOK("renameat",real_renameat);
 HOOK("unlink",real_unlink);
 HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);

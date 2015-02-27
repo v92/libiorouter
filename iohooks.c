@@ -38,7 +38,7 @@ extern char *g_cache_dir;
 extern size_t g_maxfilesize;
 extern char *g_rewrite_dir;
 
-extern int (*real_open)(const char *,int);
+extern int (*real_open)(const char *,int,...);
 extern int (*real_creat)(const char *,int);
 extern int (*real_xstat)(int,const char *,struct stat *);
 extern int (*real_xstat64)(int,const char *,struct stat64 *);
@@ -48,6 +48,7 @@ extern char *(*real_realpath_chk)(const char *, char *, size_t);
 extern int (*real_lxstat)(int,const char *,struct stat *);
 extern int (*real_lxstat64)(int,const char *,struct stat64 *);
 extern int (*real_symlink)(const char *,const char *);
+extern int (*real_link)(const char *,const char *);
 extern int (*real_rename)(const char *,const char *);
 extern int (*real_renameat)(int,const char *,int,const char *);
 extern int (*real_unlink)(const char *);
@@ -205,7 +206,7 @@ int open(const char *argpath,int flags,...)
 			LOGSEND(L_STATS, "MISS %s %s","open",cachepath); 
 	}	
 miss:
-	ret2 = real_open(path,flags);
+	ret2 = real_open(path,flags,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
 	if(io_on_off && ret == -1) {
 		struct stat oldstat;
 		if(ret2 > 0 && !fstat(ret2,&oldstat)) 
@@ -632,6 +633,47 @@ if(ret == 0)
 
 free(path);
 return real_mkdir(argpath,mode);
+}
+
+int link(const char *oldpath,const char *newpath)
+{
+char *old_normpath = NULL;
+char *new_normpath = NULL;
+char old_cachepath[PATH_MAX];
+char new_cachepath[PATH_MAX];
+int ret,n;
+
+old_normpath = normalize_path(oldpath);
+if(!old_normpath)
+	goto cleanup;
+
+n = snprintf((char *) &old_cachepath,sizeof(old_cachepath),"%s%s.whiteout",g_cache_dir,old_normpath);
+ret = real_access(old_cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(old_cachepath);
+old_cachepath[n - sizeof(".whiteout") + 1] = '\0';
+
+new_normpath = normalize_path(newpath);
+if(!new_normpath)
+	goto cleanup;
+
+n = snprintf((char *) &new_cachepath,sizeof(new_cachepath),"%s%s.whiteout",g_cache_dir,new_normpath);
+ret = real_access(new_cachepath,F_OK);
+if(!ret)
+	(void) real_unlink(new_cachepath);
+
+new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
+ret = real_link(old_cachepath,new_cachepath);
+if(io_on_off && ret == -1)
+	LOGSEND(L_STATS, "FAIL link %s %s",old_cachepath,new_cachepath);
+
+if(ret == 0)
+	LOGSEND(L_JOURNAL|L_STATS, "HIT link %s %s",old_cachepath,new_cachepath);
+
+cleanup:
+	free(old_normpath);
+	free(new_normpath);
+	return real_link(oldpath,newpath);
 }
 
 int symlink(const char *oldpath,const char *newpath)

@@ -35,7 +35,7 @@
 
 int debug_on_off = 1;	/* 0 - debug off, 1 - debug on */
 int trace_on_off = 1;	/* 0 - trace off, 1 - trace on */
-int io_on_off = 0;	/* 0 - io routing off, 1 - io routing on */
+int io_on_off = 1;	/* 0 - io routing off, 1 - io routing on */
 
 int logfile_fd = -1;
 int stats_socket_fd = -1;
@@ -156,6 +156,7 @@ HOOK("fchmodat",real_fchmodat);
 HOOK("chown",real_chown);
 HOOK("fchownat",real_fchownat);
 HOOK("realpath",real_realpath);
+HOOK("link",real_link);
 HOOK("symlink",real_symlink);
 HOOK("rename",real_rename);
 HOOK("renameat",real_renameat);

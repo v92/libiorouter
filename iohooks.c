@@ -100,7 +100,7 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 
 	path = normalize_path(argpath);
 
-	REDIRCHECK("__xstat",real_xstat,ver,path,buf);
+	REDIRCHECK("__lxstat",real_lxstat,ver,path,buf);
 
 	n = snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path); 
 	whiteout = cachepath + n - strlen(".whiteout"); 
@@ -109,10 +109,10 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 			goto cleanup;
 	*whiteout = '\0'; 
 	if(io_on_off) {
-		ret = real_xstat(ver,cachepath,&cachestat);
+		ret = real_lxstat(ver,cachepath,&cachestat);
 		if (ret == 0 || (ret == -1 && errno == ENOTDIR)) { 
 			if(S_ISREG(cachestat.st_mode) && cachestat.st_size == 0) { 
-				ret2 = real_xstat(ver,path,buf);
+				ret2 = real_lxstat(ver,path,buf);
 				if(!ret2) {
 					if(S_ISREG(buf->st_mode))
 						copy_entry(path,-1,buf,cachepath); 
@@ -135,7 +135,7 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 		} else
 			LOGSEND(L_STATS, "MISS %s %s","__xstat",path); 
 	}
-	ret2 = real_xstat(ver,path,buf);
+	ret2 = real_lxstat(ver,path,buf);
 	if(io_on_off && ret == -1) {
 		copy_entry(path,-1,buf,cachepath);
 		if(ret2 == -1) {

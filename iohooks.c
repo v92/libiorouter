@@ -153,7 +153,7 @@ int creat(const char *argpath, mode_t mode)
 
 int open(const char *argpath,int flags,...)
 {
-	int ret = 0,ret2 = 0;
+	int ret = -1,ret2 = -1;
 	char cachepath[PATH_MAX];
 	char *path = NULL;
 
@@ -169,19 +169,20 @@ int open(const char *argpath,int flags,...)
 		goto cleanup;
 	}	
 	if(flags & (O_WRONLY | O_CREAT | O_TRUNC | O_DIRECTORY)) {
-		snprintf(cachepath,sizeof(cachepath),"/run/%s",path);
+		int n;
+		snprintf(cachepath,sizeof(cachepath),"/run%s",path);
 		if(!real_access(cachepath,F_OK)) {
 			real_unlink(cachepath);
 		}
-		snprintf(cachepath,sizeof(cachepath),"/run/%s.whiteout",path);
+		n = snprintf(cachepath,sizeof(cachepath),"/run%s.whiteout",path);
 		if(!real_access(cachepath,F_OK)) {
 			real_unlink(cachepath);
 		}
+		cachepath[n - sizeof(".whiteout") + 1] = '\0';
 		LOGSEND(L_STATS|L_JOURNAL, "CALL %s %s","openwr",path); 
 		goto miss;
 	}
 	if(!whiteout_check(path)) {
-		ret2 = -1;
 		goto cleanup;
 	}
 

@@ -9,6 +9,7 @@ char *(*real_realpath)(const char *, char *) = NULL;
 char *(*real_realpath_chk)(const char *, char *, size_t) = NULL;
 int (*real_lxstat)(int,const char *,struct stat *) = NULL;
 int (*real_lxstat64)(int,const char *,struct stat64 *) = NULL;
+int (*real_symlink)(const char *,const char *) = NULL;
 int (*real_rename)(const char *,const char *) = NULL;
 int (*real_renameat)(int,const char *,int,const char *) = NULL;
 int (*real_unlink)(const char *) = NULL;

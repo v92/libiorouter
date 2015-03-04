@@ -445,7 +445,7 @@ int faccessat(int dirfd,const char *argpath,int mode,int flags)
 	path = normalize_pathat(dirfd,argpath);
 	if(io_on_off) {
 
-		REDIRCHECK("faccessat",real_faccessat,dirfd,argpath,mode,flags);
+		REDIRCHECK("faccessat",real_faccessat,dirfd,path,mode,flags);
 
 		if(!whiteout_check(path)) {
 			ret2 = -1;

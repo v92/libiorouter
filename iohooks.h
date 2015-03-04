@@ -1,6 +1,8 @@
 #ifndef IOHOOKS_H
 #define IOHOOKS_H
 int (*real_open)(const char *,int) = NULL;
+void *(*real_bfd_openw)(const char *, const char *) = NULL;
+FILE *(*real_fopen)(const char *,const char *) = NULL;
 int (*real_creat)(const char *,int) = NULL;
 int (*real_xstat)(int,const char *,struct stat *) = NULL;
 int (*real_xstat64)(int,const char *,struct stat64 *) = NULL;

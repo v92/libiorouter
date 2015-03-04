@@ -11,8 +11,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mount.h>
-#include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
 #include <utime.h>
@@ -149,6 +149,8 @@ static void libiorouter_init(void)
 char commpath[PATH_MAX],comm[PATH_MAX];
 int commfd,n;
 HOOK("open",real_open);
+HOOK("bfd_openw",real_bfd_openw);
+HOOK("fopen",real_fopen);
 HOOK("creat",real_creat);
 HOOK("opendir",real_opendir);
 HOOK("chmod",real_chmod);
@@ -163,7 +165,7 @@ HOOK("renameat",real_renameat);
 HOOK("unlink",real_unlink);
 HOOK("unlinkat",real_unlinkat);
 HOOK("access",real_access);
-HOOK("faccess",real_faccessat);
+HOOK("faccessat",real_faccessat);
 HOOK("rmdir",real_rmdir);
 HOOK("mkdir",real_mkdir);
 	
@@ -315,20 +317,33 @@ int create_path(char *path)
 char *path_bn;
 struct stat spath;
 
+if(!path)
+	return -1;
+
+printf("create_path: %s\n",path);
 path_bn = strrchr(path,'/');
 
 *path_bn = '\0';
 
 if(real_xstat(1,path,&spath) == -1) {
 	int id;
+	if(S_ISREG(spath.st_mode)) {
+		real_unlink(path);
+	}
         id = create_path(path);
 	if(id == -1 || real_mkdir(path,0755))
 		return -1;
 	*path_bn = '/';
 	return id;
+} else {
+	printf("create_path: path %s EXISTS\n",path);	
+	if(S_ISREG(spath.st_mode)) {
+		real_unlink(path);
+		real_mkdir(path,0755);
+	}
 }
 *path_bn = '/';
-return spath.st_uid;
+return 0;
 }
 
 
@@ -436,8 +451,7 @@ if(real_xstat(1,ppath,&pathstat) == -1) {
 			dtime.modtime = pathstat.st_mtime;
 			utime(cpath,&dtime);
 		}
-	} else
-		return -2;
+	}
 }
 return 0;
 }
@@ -481,13 +495,19 @@ int whiteout_check(const char *argpath)
 {
 int ret = 0;
 char cachepath[PATH_MAX];
+char *path = NULL;
 snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,argpath);
 ret = real_access(cachepath,F_OK);
 if(!ret) {
 	return 0;
 }
 if(ret == -1 && errno == ENOTDIR) {
-	return 0;
+	printf("whiteout_check: creating path %s\n",argpath);
+	path = normalize_path(argpath);
+	snprintf((char *) &cachepath,sizeof(cachepath),"%s%s",g_cache_dir,path);
+	create_path(cachepath);
+	free(path);
+	return -1;
 }
 return ret;	
 }

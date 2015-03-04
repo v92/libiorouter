@@ -40,7 +40,7 @@
 	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
 	if(stats_socket_fd != -1 && (log_attr & L_STATS)) \
 		(void) sendto(stats_socket_fd, msg, n_msg, 0 , (struct sockaddr *) &udps, sizeof(udps)); \
-	if(logfile_fd != -1 && (log_attr & L_JOURNAL)) \
+	if(logfile_fd != -1) \
 		(void) write(logfile_fd,msg,n_msg); \
 	}
 

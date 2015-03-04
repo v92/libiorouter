@@ -38,3 +38,6 @@ Signals:
 * SIGURG - turns IO on/off
 * SIGTTOU - turn debug messages on/off
 * SIGTTIN - turn traceing (stats) on/off
+
+# testing
+libiorouter successfuly passes cthon04 test suite.

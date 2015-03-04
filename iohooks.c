@@ -40,7 +40,7 @@ extern char *g_rewrite_dir;
 
 extern int (*real_open)(const char *,int,...);
 extern void *(*real_bfd_openw)(const char *,const char *);
-extern FILE *(*real_fopen)(const char *,const char *);
+/*extern FILE *(*real_fopen)(const char *,const char *);*/
 extern int (*real_creat)(const char *,int);
 extern int (*real_xstat)(int,const char *,struct stat *);
 extern int (*real_xstat64)(int,const char *,struct stat64 *);
@@ -202,6 +202,7 @@ cleanup:
 	return ret2;
 }
 
+/*
 FILE *fopen(const char *argpath, const char *mode)
 {
 	int flags = O_RDONLY;
@@ -231,6 +232,7 @@ FILE *fopen(const char *argpath, const char *mode)
 	return fdopen(pathfd,mode);
 	
 }
+*/
 
 int creat(const char *argpath, mode_t mode)
 {

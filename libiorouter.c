@@ -35,7 +35,7 @@
 
 int debug_on_off = 1;	/* 0 - debug off, 1 - debug on */
 int trace_on_off = 1;	/* 0 - trace off, 1 - trace on */
-int io_on_off = 1;	/* 0 - io routing off, 1 - io routing on */
+int io_on_off = 0;	/* 0 - io routing off, 1 - io routing on */
 
 int logfile_fd = -1;
 int stats_socket_fd = -1;
@@ -150,7 +150,7 @@ char commpath[PATH_MAX],comm[PATH_MAX];
 int commfd,n;
 HOOK("open",real_open);
 HOOK("bfd_openw",real_bfd_openw);
-HOOK("fopen",real_fopen);
+/*HOOK("fopen",real_fopen);*/
 HOOK("creat",real_creat);
 HOOK("opendir",real_opendir);
 HOOK("chmod",real_chmod);
@@ -320,7 +320,6 @@ struct stat spath;
 if(!path)
 	return -1;
 
-printf("create_path: %s\n",path);
 path_bn = strrchr(path,'/');
 
 *path_bn = '\0';
@@ -336,7 +335,6 @@ if(real_xstat(1,path,&spath) == -1) {
 	*path_bn = '/';
 	return id;
 } else {
-	printf("create_path: path %s EXISTS\n",path);	
 	if(S_ISREG(spath.st_mode)) {
 		real_unlink(path);
 		real_mkdir(path,0755);
@@ -502,7 +500,6 @@ if(!ret) {
 	return 0;
 }
 if(ret == -1 && errno == ENOTDIR) {
-	printf("whiteout_check: creating path %s\n",argpath);
 	path = normalize_path(argpath);
 	snprintf((char *) &cachepath,sizeof(cachepath),"%s%s",g_cache_dir,path);
 	create_path(cachepath);

@@ -14,7 +14,13 @@ It also provides ability to log every single IO call with minimum overhead to LI
 
 libiorouter does not provide mechanism for cache invalidation between NFS clients, but it will invalidate cache on same host. It is on user to implement cache invalidation between NFS clients which suits its needs by using daemon which listens on port 12345.
 
-# Usage
+# Building and ssage
+
+Building is done with simple make in source directory. 
+```
+~/libiorouter$ make
+gcc libiorouter.c iohooks.c normalize_path.c -ansi -Wall -g -ldl -shared -fPIC -o libiorouter.so
+```
 
 Usage of libiorouter is simple :
 ```
@@ -43,8 +49,9 @@ Signals:
 
 # Testing
 
-libiorouter successfuly passes cthon04 test suite.We also plan add libiorouter own test suite.
+libiorouter successfuly passes cthon04 test suite. We also plan add libiorouter own test suite.
 
 # TODO
 * CI testing suite
 * debian package
+* daemons for cache invalidation between NFS clients - they're already done but not opensourced yet. 

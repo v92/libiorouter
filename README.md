@@ -3,17 +3,19 @@
 src="https://scan.coverity.com/projects/4222/badge.svg"/>
 </a>
 # libiorouter
-libiorouter is LD_PRELOAD library which give application better control of caching backend filesystem and cache invalidation. It works transparently by hooking IO calls and redirect them to LIBIOR_CACHEDIR which is usually tmpfs. 
+libiorouter is LD_PRELOAD library which gives application better control of caching backend filesystem and cache invalidation. It works transparently by hooking IO calls and redirect them to LIBIOR_CACHEDIR which is usually tmpfs (but any other FS can be used).
 
-It was created because we were struggling with attribute caching on NFS shares which were used for serving PHP hosting. PHP is very metadata hungry because it generate tremendous number of stat()/access() calls. Those calls are usually same or redundant so there is no point to ask them again from backend directory. By increasing attribute cache, we also significantly affected cache coherency between NFS clients. Decreasing was out of questions because increased latency would slow down hosting too much.
+## Motivation
+It was created because we were struggling with attribute caching on NFS shares which were used for serving PHP hosting. PHP is very metadata hungry because it generate tremendous number of stat()/access() calls. Those calls are usually same or redundant,so there is no point to ask them again from backend directory. By increasing attribute cache, we also significantly affected cache coherency between NFS clients. Decreasing was out of questions because increased latency would slow down hosting too much. So we decided to use NFS share without attribute caching and leave it to libiorouter.
 
-A lot of web hosting data won't change much over time. We really need to handle only small subset of those data which change occasionally (through FTP).
+A lot of web hosting data won't change much over time. We really needed to handle only small subset of those data which change occasionally (through FTP).
 
-It also provides ability to log every single IO call with minimum overhead to LIBIOR_CACHEDIR/iostats/<pid> . IO calls which are important, because they're changing data or metadata on backend filesystems (and thus cachedir) are sent to localhost UDP port 12345.
+It also provides ability to log every single IO call with minimum overhead to LIBIOR_CACHEDIR/iostats/<pid>. Those IO calls which changes data or metadata on backend filesystems (and thus cachedir) are sent to localhost UDP port 12345 for further processing. 
 
-libiorouter does not provide mechanism for cache invalidation between NFS clients, but it will invalidate cache on same host. It is on user to implement cache invalidation between NFS clients which suits its needs.
+libiorouter does not provide mechanism for cache invalidation between NFS clients, but it will invalidate cache on same host. It is on user to implement cache invalidation between NFS clients which suits its needs by using daemon which listens on port 12345.
 
-# usage
+# Usage
+
 Usage of libiorouter is simple :
 ```
 root@host:~# LD_PRELOAD=/path/to/libiorouter.so app
@@ -21,7 +23,7 @@ root@host:~# LD_PRELOAD=/path/to/libiorouter.so app
 
 Or you may put it into /etc/ld.so.preload.
 
-# controling libiorouter
+# Controling libiorouter
 libiorouter can be controled in two ways:
 * by setting environment variables 
 * signals
@@ -39,8 +41,10 @@ Signals:
 * SIGTTOU - turn debug messages on/off
 * SIGTTIN - turn traceing (stats) on/off
 
-# testing
-libiorouter successfuly passes cthon04 test suite.
+# Testing
+
+libiorouter successfuly passes cthon04 test suite.We also plan add libiorouter own test suite.
 
 # TODO
 * CI testing suite
+* debian package

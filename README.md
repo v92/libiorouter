@@ -41,3 +41,6 @@ Signals:
 
 # testing
 libiorouter successfuly passes cthon04 test suite.
+
+# TODO
+* CI testing suite

@@ -144,7 +144,7 @@ int __fxstatat(int ver,int dirfd,const char *argpath,struct stat *buf,int flags)
 	return ret;
 }
 
-int ___xstat(int ver,const char *argpath,struct stat *buf)
+int __xstat(int ver,const char *argpath,struct stat *buf)
 {
 	int ret = 0,ret2 = -1;
 	char cachepath[PATH_MAX];

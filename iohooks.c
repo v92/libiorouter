@@ -64,7 +64,17 @@ extern int (*real_access)(const char *, int);
 extern int (*real_faccessat)(int,const char *, int,int);
 extern int (*real_mkdir)(const char *,mode_t);
 extern DIR *(*real_opendir)(const char *);
+extern int (*real_chroot)(const char *);
 
+
+int chroot(const char *path)
+{
+if(strcmp(path,"/"))
+	strncpy(chroot_path,path,PATH_MAX - 1);
+else
+	memset(chroot_path,'\0',PATH_MAX);	
+return real_chroot(path);
+}
 
 int __lxstat64(int ver,const char *argpath,struct stat64 *buf)
 {

@@ -46,6 +46,7 @@ char *g_cache_dir = NULL;
 size_t g_maxfilesize = 0;
 char *g_rewrite_dir = NULL;
 char *g_whitelist_regex = NULL;
+char chroot_path[PATH_MAX];
 
 void ioonoff(int signum)
 {
@@ -175,6 +176,8 @@ HOOK("fxstatat",real_fxstatat);
 HOOK("__realpath_chk",real_realpath_chk);
 HOOK("__lxstat",real_lxstat);
 HOOK("__lxstat64",real_lxstat64);
+
+HOOK("chroot",real_chroot);
 
 memset(comm,'\0',sizeof(comm));
 snprintf(commpath,PATH_MAX,"/proc/%d/comm",getpid());

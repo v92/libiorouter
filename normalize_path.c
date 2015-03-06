@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <limits.h>
 #include <fcntl.h>
 
+extern char chroot_path[PATH_MAX];
 
 /* lstat-less realpath version */
 char * normalize_pathat(int dirfd,const char * src)
@@ -49,7 +50,10 @@ char * normalize_pathat(int dirfd,const char * src)
 
         if (src[0] != '/') {
 		if(dirfd == AT_FDCWD) {
-			if (getcwd(pwd, sizeof(pwd)) == NULL) 
+			if(chroot_path[0] != '\0') 
+				strncpy(pwd,chroot_path,strlen(chroot_path));	
+
+			if (getcwd(pwd + strlen(chroot_path), PATH_MAX - strlen(chroot_path) - 1) == NULL) 
 				return NULL;
 			pwd_len = strlen(pwd);
 		} else {

@@ -26,4 +26,5 @@ int (*real_mkdir)(const char *,mode_t) = NULL;
 int (*real_access)(const char *, int) = NULL;
 int (*real_faccessat)(int,const char *, int,int) = NULL;
 DIR *(*real_opendir)(const char *) = NULL;
+int (*real_chroot)(const char *) = NULL;
 #endif

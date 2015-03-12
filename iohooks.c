@@ -37,6 +37,7 @@ extern char *g_socket_path;
 extern char *g_cache_dir;
 extern size_t g_maxfilesize;
 extern char *g_rewrite_dir;
+extern char chroot_path[PATH_MAX];
 
 extern int (*real_open)(const char *,int,...);
 extern void *(*real_bfd_openw)(const char *,const char *);
@@ -73,6 +74,7 @@ if(strcmp(path,"/"))
 	strncpy(chroot_path,path,PATH_MAX - 1);
 else
 	memset(chroot_path,'\0',PATH_MAX);	
+LOGSEND(L_STATS|L_JOURNAL, "CALL %s %s","chroot",path); 
 return real_chroot(path);
 }
 
@@ -110,7 +112,7 @@ int __lxstat(int ver,const char *argpath,struct stat *buf)
 						copy_entry(path,-1,buf,cachepath); 
 				
 					if(S_ISDIR(buf->st_mode)) { 
-						unlink(cachepath);
+						real_unlink(cachepath);
 						copy_entry(path,-1,buf,cachepath); 
 					}
 					LOGSEND(L_STATS, "HIT %s %s","__lxstat",path); 
@@ -164,16 +166,16 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 	struct stat cachestat;
 
 	path = normalize_path(argpath);
-
 	REDIRCHECK("__xstat",real_xstat,ver,path,buf);
 
-	n = snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path); 
-	whiteout = cachepath + n - strlen(".whiteout"); 
-	ret = real_access(cachepath,F_OK); 
-	if(ret == 0 || (ret == -1 && errno == ENOTDIR))
-			goto cleanup;
-	*whiteout = '\0'; 
 	if(io_on_off) {
+		n = snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path); 
+		whiteout = cachepath + n - strlen(".whiteout"); 
+		ret = real_access(cachepath,F_OK); 
+		if(ret == 0 || (ret == -1 && errno == ENOTDIR))
+				goto cleanup;
+		*whiteout = '\0'; 
+
 		ret = real_xstat(ver,cachepath,&cachestat);
 		if (ret == 0 || (ret == -1 && errno == ENOTDIR)) { 
 			if(S_ISREG(cachestat.st_mode) && cachestat.st_size == 0) { 
@@ -183,7 +185,7 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 						copy_entry(path,-1,buf,cachepath); 
 				
 					if(S_ISDIR(buf->st_mode)) { 
-						unlink(cachepath);
+						real_unlink(cachepath);
 						copy_entry(path,-1,buf,cachepath); 
 					}
 					LOGSEND(L_STATS, "HIT %s %s","__xstat",path); 
@@ -539,6 +541,8 @@ strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
 if(!argpath)
 	return -1;
+
+LOGSEND(L_STATS, "CALL unlink %s%s",chroot_path,argpath);
 
 if(io_on_off) {
 	path = normalize_path(argpath);

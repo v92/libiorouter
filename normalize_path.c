@@ -25,8 +25,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <unistd.h>
 #include <limits.h>
 #include <fcntl.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
-extern char chroot_path[PATH_MAX];
+#include "libiorouter.h"
+
+extern int logfile_fd;
+extern int stats_socket_fd;
+extern struct sockaddr_in udps;
+
 
 /* lstat-less realpath version */
 char * normalize_pathat(int dirfd,const char * src)
@@ -50,10 +58,7 @@ char * normalize_pathat(int dirfd,const char * src)
 
         if (src[0] != '/') {
 		if(dirfd == AT_FDCWD) {
-			if(chroot_path[0] != '\0') 
-				strncpy(pwd,chroot_path,strlen(chroot_path));	
-
-			if (getcwd(pwd + strlen(chroot_path), PATH_MAX - strlen(chroot_path) - 1) == NULL) 
+			if (getcwd(pwd, PATH_MAX) == NULL) 
 				return NULL;
 			pwd_len = strlen(pwd);
 		} else {

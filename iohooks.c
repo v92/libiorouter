@@ -29,7 +29,8 @@ extern int debug_on_off;	/* 0 - debug off, 1 - debug on */
 extern int trace_on_off;	/* 0 - trace off, 1 - trace on */
 extern int io_on_off;	/* 0 - io routing off, 1 - io routing on */
 
-extern int logfile_fd;
+extern int logstats_fd;
+extern int logjournal_fd;
 extern int stats_socket_fd;
 extern struct sockaddr_in udps;
 
@@ -37,6 +38,7 @@ extern char *g_socket_path;
 extern char *g_cache_dir;
 extern size_t g_maxfilesize;
 extern char *g_rewrite_dir;
+extern char chroot_path[PATH_MAX];
 
 extern int (*real_open)(const char *,int,...);
 extern void *(*real_bfd_openw)(const char *,const char *);

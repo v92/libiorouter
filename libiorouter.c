@@ -37,7 +37,8 @@ int debug_on_off = 1;	/* 0 - debug off, 1 - debug on */
 int trace_on_off = 1;	/* 0 - trace off, 1 - trace on */
 int io_on_off = 0;	/* 0 - io routing off, 1 - io routing on */
 
-int logfile_fd = -1;
+int logstats_fd = -1;
+int logjournal_fd = -1;
 int stats_socket_fd = -1;
 struct sockaddr_in udps;
 
@@ -196,36 +197,6 @@ signal(SIGTTIN,traceonoff);
 signal(SIGTTOU,debugonoff);	
 signal(SIGURG,ioonoff);	
 signal(SIGPROF,reinit_log_file);	
-socket_init();
-return;
-}
-#define UNIX_PATH_MAX 108
-
-void socket_init(void)
-{
-if ((stats_socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) 
-	syslog(3, "stats socket '%s' initialization failed: %s", g_socket_path, strerror(errno));
-
-memset((char *) &udps, 0, sizeof(udps));
-udps.sin_family = AF_INET;
-udps.sin_port = htons(12345);
-inet_aton("127.0.0.1", &udps.sin_addr);
-     
-/*
-struct sockaddr_un remote;
-
-if ((stats_socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) 
-	syslog(3, "stats socket '%s' initialization failed: %s", g_socket_path, strerror(errno));
-
-remote.sun_family = AF_UNIX;
-strncpy(remote.sun_path, g_socket_path, UNIX_PATH_MAX-1);
-len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-if (connect(stats_socket_fd, (struct sockaddr *)&remote, len) == -1) {
-	syslog(3, "stats socket '%s' connection failed: %s", g_socket_path, strerror(errno));
-	close(stats_socket_fd);
-	stats_socket_fd = -1;
-}
-*/
 return;
 }
 
@@ -233,14 +204,23 @@ void reinit_log_file(int signum)
 {
 char logfile[PATH_MAX];
 
-if(logfile_fd >= 0) {
-	close(logfile_fd);
+if(logstats_fd >= 0) {
+	close(logstats_fd);
 }
-snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d",g_cache_dir,g_rewrite_dir,getpid());
-if((logfile_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
+snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d.stats",g_cache_dir,g_rewrite_dir,getpid());
+if((logstats_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
 		return;
 	}
-write(logfile_fd,INITSTR,strlen(INITSTR));
+write(logstats_fd,INITSTR,strlen(INITSTR));
+
+if(logjournal_fd >= 0) {
+	close(logjournal_fd);
+}
+snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d.journal",g_cache_dir,g_rewrite_dir,getpid());
+if((logjournal_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
+		return;
+	}
+write(logjournal_fd,INITSTR,strlen(INITSTR));
 return;
 }
 

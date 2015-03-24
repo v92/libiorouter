@@ -37,11 +37,11 @@
 	char msg[PATH_MAX]; \
 	struct timeval sec; \
 	gettimeofday(&sec,NULL); \
-	n_msg = snprintf((char *) &msg,PATH_MAX,"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
-	if(stats_socket_fd != -1 && (log_attr & L_STATS)) \
-		(void) sendto(stats_socket_fd, msg, n_msg, 0 , (struct sockaddr *) &udps, sizeof(struct sockaddr)); \
-	if(logfile_fd != -1) \
-		(void) write(logfile_fd,msg,n_msg); \
+	n_msg = snprintf((char *) &msg,sizeof(msg),"%ld.%ld "fmt"\n",sec.tv_sec,sec.tv_usec,__VA_ARGS__); \
+		if(logstats_fd != -1 && (log_attr & L_STATS)) \
+			(void) write(logstats_fd,msg,n_msg); \
+		if(logjournal_fd != -1 && (log_attr & L_JOURNAL)) \
+			(void) write(logjournal_fd,msg,n_msg); \
 	}
 
 int create_path(char *path);

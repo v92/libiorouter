@@ -925,32 +925,26 @@ cleanup:
 
 char *realpath(const char *path, char *resolved_path)
 {
-if(!path || !io_on_off || strstr(path,".snapshot")) { 
-	LOGSEND(L_STATS, "CALL %s %s","realpath",path); 
+if(!path || !io_on_off || strstr(path,".snapshot"))
 	return real_realpath(path,resolved_path); 
-} 
 
-if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { 
-	LOGSEND(L_STATS, "CALL %s %s","realpath",path); 
+if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir)))
 	return real_realpath(path,resolved_path); 
-} 
+
+LOGSEND(L_STATS, "CALL %s %s","realpath",path); 
 resolved_path = libio_realpath(path);
-LOGSEND(L_STATS, "HIT realpath %s",path);
 return resolved_path;
 }
 
 char *__realpath_chk(const char *path, char *resolved_path,size_t resolved_len)
 {
-if(!path || !io_on_off || strstr(path,".snapshot")) { 
-	LOGSEND(L_STATS, "CALL %s %s","__realpath_chk",path); 
+if(!path || !io_on_off || strstr(path,".snapshot"))
 	return real_realpath_chk(path,resolved_path,resolved_len); 
-} 
 
-if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { 
-	LOGSEND(L_STATS, "CALL %s %s","__realpath_chk",path); 
+if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir)))
 	return real_realpath_chk(path,resolved_path,resolved_len); 
-} 
+
+LOGSEND(L_STATS, "CALL %s %s","__realpath_chk",path); 
 resolved_path = libio_realpath_chk(path,resolved_path,resolved_len);
-LOGSEND(L_STATS, "HIT realpath %s",path);
 return resolved_path;
 }

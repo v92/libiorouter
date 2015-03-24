@@ -915,7 +915,7 @@ if(io_on_off && ret == -1)
 	LOGSEND(L_STATS, "FAIL renameat %s %s",old_cachepath,new_cachepath);
 
 if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT renameat %s %s",old_cachepath,new_cachepath);
+	LOGSEND(L_JOURNAL|L_STATS, "CALL renameat %s %s",old_cachepath,new_cachepath);
 
 cleanup:
 	free(old_normpath);

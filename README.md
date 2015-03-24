@@ -54,4 +54,3 @@ libiorouter successfuly passes cthon04 test suite. We also plan add libiorouter 
 # TODO
 * CI testing suite
 * debian package
-* daemons for cache invalidation between NFS clients - they're already done but not opensourced yet. 

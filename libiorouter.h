@@ -15,16 +15,17 @@
 
 #define INITSTR "libiorouter has been inicialized.\n"
 
-#define REDIRCHECK(funcstr,func,...) \
-	if(!path || strstr(path,".snapshot")) { \
-                goto cleanup; \
-        } \
-	if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { \
-                LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
-                ret = func(__VA_ARGS__); \
-		free(path); \
-		return ret; \
-        } \
+#define REDIRCHECK(pathvar) \
+	if(!(pathvar)) { \
+		errno = EFAULT; \
+		return -1; \
+	} \
+	if(	strstr((pathvar),".snapshot") || \
+		strncmp((pathvar),g_rewrite_dir,strlen(g_rewrite_dir)) || \
+		strncmp(chroot_path,g_rewrite_dir,strlen(g_rewrite_dir)) \
+	) { \
+		goto miss; \
+        }
 
 #define L_JOURNAL 1
 #define L_STATS 2

@@ -671,7 +671,10 @@ if(io_on_off && ret == -1)
 if(ret == 0)
 	LOGSEND(L_JOURNAL|L_STATS, "HIT chown %s",cachepath);
 
-free(path);
+cleanup:
+	free(path);
+	LOGSEND(L_STATS, "CALL chown %s",cachepath);
+	
 return real_chown(argpath,owner,group);
 }
 

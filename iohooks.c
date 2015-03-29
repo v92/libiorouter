@@ -135,10 +135,9 @@ int __lxstat(int ver,const char *argpath,struct stat *buf)
 miss:
 	ret2 = real_lxstat(ver,argpath,buf);
 	if(io_on_off && ret == -1) {
-		copy_entry(path,-1,buf,cachepath);
-		if(ret2 == -1) {
+		copy_entry(argpath,-1,buf,cachepath);
+		if(ret2 == -1) 
 			create_whiteout(cachepath);
-		}
 	}
 cleanup:
 	LOGSEND(L_STATS, "%s %s %s%s",opstate,"__lxstat",chroot_path,path); 
@@ -212,7 +211,7 @@ int __xstat(int ver,const char *argpath,struct stat *buf)
 miss:
 	ret2 = real_xstat(ver,argpath,buf);
 	if(io_on_off && ret == -1) {
-		copy_entry(path,-1,buf,cachepath);
+		copy_entry(argpath,-1,buf,cachepath);
 		if(ret2 == -1) {
 			create_whiteout(cachepath);
 		}
@@ -267,10 +266,6 @@ int open(const char *argpath,int flags,...)
 	char *path = NULL;
 	char *opstate = "CALL";
 	int l_attr = L_STATS;
-	if(!argpath) {
-		errno = EFAULT;
-		return -1;
-	}
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
@@ -326,7 +321,7 @@ miss:
 	if(io_on_off && ret == -1) {
 		struct stat oldstat;
 		if(ret2 >= 0 && !fstat(ret2,&oldstat))  {
-			copy_entry(path,ret2,&oldstat,cachepath);
+			copy_entry(argpath,ret2,&oldstat,cachepath);
 		}
 		if(ret2 == -1 && errno != ENOTDIR) {
 			create_whiteout(cachepath);
@@ -483,82 +478,80 @@ cleanup:
 
 int faccessat(int dirfd,const char *argpath,int mode,int flags)
 {
+	int ret = 0,ret2 = -1;
 	char *path = NULL;
 	char cachepath[PATH_MAX];
-	int ret = 0,ret2 = 0;
+	char *opstate = "CALL";
+
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-
 	path = normalize_pathat(dirfd,argpath);
-	if(io_on_off) {
+	strncat(cachepath,path,sizeof(cachepath)-1);
 
-		REDIRCHECK(path);
+	REDIRCHECK(path);
 
-		if(!whiteout_check(path)) {
-			ret2 = -1;
-			goto cleanup;
-		}
+	if(!whiteout_check(path))
+		goto cleanup;
 
-		strncat(cachepath,path,sizeof(cachepath)-1);
-		ret = real_faccessat(dirfd,cachepath,mode,flags);
-		if (ret >= 0) { 
-			LOGSEND(L_STATS, "HIT %s %s","faccessat",cachepath); 
-			ret2 = ret;
-			goto cleanup;
-		} else 
-			LOGSEND(L_STATS, "MISS %s %s","faccessat",cachepath); 
+	if(!io_on_off)
+		goto miss;
+
+	ret2 = ret = real_faccessat(dirfd,cachepath,mode,flags);
+	if (ret >= 0) { 
+		opstate = "HIT";
+		goto cleanup;
 	}
+	opstate = "MISS";
 miss:
-	ret2 = real_faccessat(dirfd,path,mode,flags);
+	ret2 = real_faccessat(dirfd,argpath,mode,flags);
 	if(io_on_off && ret == -1) {
 		struct stat buf;
-		real_xstat(1,path,&buf);
-		copy_entry(path,-1,(struct stat *) &buf,cachepath);
-		if(ret2 == -1) {
+		real_xstat(1,argpath,&buf);
+		copy_entry(argpath,-1,(struct stat *) &buf,cachepath);
+		if(ret2 == -1) 
 			create_whiteout(cachepath);
-		}
 	}
 cleanup:
+	LOGSEND(L_STATS, "%s %s %s%s",opstate,"faccessat",chroot_path,cachepath); 
 	free(path);
 	return ret2;
 }
 
 int access(const char *argpath,int mode)
 {
+	int ret = 0,ret2 = -1;
 	char *path = NULL;
+	char *opstate = "CALL";
 	char cachepath[PATH_MAX];
-	int ret = 0,ret2 = 0;
-	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
+	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 	path = normalize_path(argpath);
+	strncat(cachepath,path,sizeof(cachepath)-1);
 
 	REDIRCHECK(path);
 
-	if(!whiteout_check(path)) {
-		ret2 = -1;
+	if(!whiteout_check(path))
+		goto cleanup;
+
+	if(!io_on_off) 
+		goto miss;
+
+	ret2 = ret = real_access(cachepath,mode);
+	if (ret >= 0) { 
+		opstate = "HIT";
 		goto cleanup;
 	}
-
-	strncat(cachepath,path,sizeof(cachepath)-1);
-	if(io_on_off) {
-		ret = real_access(cachepath,mode);
-		if (ret >= 0) { 
-			LOGSEND(L_STATS, "HIT %s %s","access",cachepath); 
-			ret2 = ret;
-			goto cleanup;
-		} else 
-			LOGSEND(L_STATS, "MISS %s %s","access",cachepath); 
-	}
+	opstate = "MISS";
 miss:
-	ret2 = real_access(path,mode);
+	ret2 = real_access(argpath,mode);
 	if(io_on_off && ret == -1) {
 		struct stat buf;
-		real_xstat(1,path,&buf);
-		copy_entry(path,-1,(struct stat *) &buf,cachepath);
-		if(ret2 == -1) {
+		real_xstat(1,argpath,&buf);
+		copy_entry(argpath,-1,(struct stat *) &buf,cachepath);
+		if(ret2 == -1)
 			create_whiteout(cachepath);
-		}
 	}
 cleanup:
+	LOGSEND(L_STATS, "%s %s %s%s",opstate,"access",chroot_path,cachepath); 
 	free(path);
 	return ret2;
 }
@@ -566,39 +559,37 @@ cleanup:
 int unlink(const char *argpath)
 {
 int ret;
+int l_attr = L_STATS;
 char *path = NULL;
+char *opstate = "CALL";
 char cachepath[PATH_MAX];
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
+path = normalize_path(argpath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
-if(!argpath)
-	return -1;
+REDIRCHECK(path);
 
-LOGSEND(L_STATS, "CALL unlink %s%s",chroot_path,argpath);
-
-if(io_on_off) {
-	path = normalize_path(argpath);
-	REDIRCHECK(path);
-
-	strncat(cachepath,path,sizeof(cachepath)-1);
-
-	ret = real_unlink(cachepath);
-	if(ret == -1)
-		LOGSEND(L_STATS, "FAIL unlink %s",cachepath);
-	if(ret == 0)
-		LOGSEND(L_JOURNAL|L_STATS, "HIT unlink %s",path);
+ret = real_unlink(cachepath);
+if(ret == -1) 
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_JOURNAL|L_STATS;
 }
 miss:
+	LOGSEND(l_attr, "%s %s %s%s",opstate,"unlink",chroot_path,argpath);
 	free(path);
 	return real_unlink(argpath);
 }
 
 int unlinkat(int dirfd,const char *argpath,int flags)
 {
-char *path = NULL;
-char cachepath[PATH_MAX];
 int ret;
-
+int l_attr = L_STATS;
+char *path = NULL;
+char *opstate = "CALL";
+char cachepath[PATH_MAX];
 
 if(!argpath)
 	return -1;
@@ -617,20 +608,25 @@ strncat(cachepath,path,sizeof(cachepath)-1);
 
 ret = real_unlinkat(dirfd,cachepath,flags);
 if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL unlinkat %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT unlinkat %s",cachepath);
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 
 miss:
+	LOGSEND(l_attr, "%s %s %s%s",opstate,"unlinkat",chroot_path,cachepath);
 	free(path);
 	return real_unlinkat(dirfd,argpath,flags);
 }
 
 int fchmodat(int dirfd,const char *argpath,mode_t mode,int flags)
 {
-char *path = NULL;
-char cachepath[PATH_MAX];
 int ret;
+int l_attr = L_STATS;
+char *path = NULL;
+char *opstate = "CALL";
+char cachepath[PATH_MAX];
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 
@@ -645,11 +641,14 @@ strncat(cachepath,path,sizeof(cachepath)-1);
 
 ret = real_fchmodat(dirfd,cachepath,mode,flags);
 if(ret == -1)
-	LOGSEND(L_STATS, "FAIL fchmodat %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT fchmodat %s",cachepath);
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 
 miss:
+	LOGSEND(l_attr,"%s %s %s%s",opstate,"fchmodat",chroot_path,cachepath);
 	free(path);
 	return real_fchmodat(dirfd,argpath,mode,flags);
 }
@@ -657,27 +656,26 @@ miss:
 int chmod(const char *argpath,mode_t mode)
 {
 int ret;
+int l_attr = L_STATS;
 char *path = NULL;
+char *opstate = "CALL";
 char cachepath[PATH_MAX];
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-
-if(!argpath)
-	return -1;
-
 path = normalize_path(argpath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 REDIRCHECK(path);
 
-strncat(cachepath,path,sizeof(cachepath)-1);
-
 ret = real_chmod(cachepath,mode);
 if(ret == -1)
-	LOGSEND(L_STATS, "FAIL chmod %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT chmod %s",cachepath);
-
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 miss:
+	LOGSEND(l_attr,"%s %s %s%s",opstate,"chmod",chroot_path,cachepath);
 	free(path);
 	return real_chmod(argpath,mode);
 }
@@ -685,56 +683,55 @@ miss:
 int chown(const char *argpath, uid_t owner, gid_t group)
 {
 int ret;
+int l_attr = L_STATS;
 char *path = NULL;
+char *opstate = "CALL";
 char cachepath[PATH_MAX];
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-
-if(!argpath)
-	return -1;
-
 path = normalize_path(argpath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 REDIRCHECK(path);
 
-strncat(cachepath,path,sizeof(cachepath)-1);
-
 ret = real_chown(cachepath,owner,group);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL chown %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT chown %s",cachepath);
+if(ret == -1)
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 
 miss:
+	LOGSEND(l_attr,"%s %s %s%s",opstate,"chown",chroot_path,cachepath);
 	free(path);
-	LOGSEND(L_STATS, "CALL chown %s",cachepath);
 	return real_chown(argpath,owner,group);
 }
 
 int fchownat(int dirfd,const char *argpath, uid_t owner, gid_t group,int flags)
 {
+int ret;
+int l_attr = L_STATS;
 char *path = NULL;
+char *opstate = "CALL";
 char cachepath[PATH_MAX];
-	int ret;
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-
-if(!argpath)
-	return -1;
-
 path = normalize_pathat(dirfd,argpath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 REDIRCHECK(path);
 
-strncat(cachepath,path,sizeof(cachepath)-1);
-
 ret = real_fchownat(dirfd,cachepath,owner,group,flags);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL fchownat %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT fchownat %s",cachepath);
+if(ret == -1)
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+        l_attr = L_STATS|L_JOURNAL;
+}
 
 miss:
+	LOGSEND(l_attr,"%s %s %s%s",opstate,"fchownat",chroot_path,cachepath);
 	free(path);
 	return real_fchownat(dirfd,argpath,owner,group,flags);
 }
@@ -742,25 +739,27 @@ miss:
 int rmdir(const char *argpath)
 {
 int ret;
+int l_attr = L_STATS;
 char *path = NULL;
+char *opstate = "CALL";
 char cachepath[PATH_MAX];
 
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-
-if(!argpath)
-	return -1;
-
 path = normalize_path(argpath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 REDIRCHECK(path);
-strncat(cachepath,path,sizeof(cachepath)-1);
+
 ret = real_rmdir(cachepath);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL rmdir %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT rmdir %s",cachepath);
+if(ret == -1)
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 
 miss:
+	LOGSEND(l_attr,"%s %s %s%s",opstate,"rmdir",chroot_path,cachepath);
 	free(path);
 	return real_rmdir(argpath);
 }
@@ -768,9 +767,14 @@ miss:
 int mkdir(const char *argpath,mode_t mode)
 {
 int ret;
+int l_attr = L_STATS;
 char *path = NULL;
+char *opstate = "CALL";
 char cachepath[PATH_MAX];
 
+strncpy(cachepath,g_cache_dir,PATH_MAX-1);
+path = normalize_path(argpath);
+strncat(cachepath,path,sizeof(cachepath)-1);
 
 if(!argpath)
 	return -1;
@@ -787,23 +791,28 @@ REDIRCHECK(path);
 strncpy(cachepath,g_cache_dir,PATH_MAX-1);
 strncat(cachepath,path,sizeof(cachepath)-1);
 ret = real_mkdir(cachepath,mode);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL mkdir %s",cachepath);
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT mkdir %s",cachepath);
+if(ret == -1)
+	opstate = "FAIL";
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS | L_JOURNAL;
+}
 
 miss:
+	LOGSEND(l_attr,"%s %s %s%s",opstate,"rmdir",chroot_path,cachepath);
 	free(path);
 	return real_mkdir(argpath,mode);
 }
 
 int link(const char *oldpath,const char *newpath)
 {
+int ret,n;
+int l_attr = L_STATS;
+char *opstate = "CALL";
 char *old_normpath = NULL;
 char *new_normpath = NULL;
 char old_cachepath[PATH_MAX];
 char new_cachepath[PATH_MAX];
-int ret,n;
 
 old_normpath = normalize_path(oldpath);
 if(!old_normpath)
@@ -826,13 +835,16 @@ if(!ret)
 
 new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
 ret = real_link(old_cachepath,new_cachepath);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL link %s %s",old_cachepath,new_cachepath);
+if(ret == -1)
+	opstate = "FAIL";
 
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT link %s %s",old_cachepath,new_cachepath);
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS | L_JOURNAL;
+}
 
 cleanup:
+	LOGSEND(l_attr,"%s %s %s%s %s%s",opstate,"link",chroot_path,oldpath,chroot_path,newpath);
 	free(old_normpath);
 	free(new_normpath);
 	return real_link(oldpath,newpath);
@@ -840,11 +852,13 @@ cleanup:
 
 int symlink(const char *oldpath,const char *newpath)
 {
+int ret,n;
+int l_attr = L_STATS;
+char *opstate = "CALL";
 char *old_normpath = NULL;
 char *new_normpath = NULL;
 char old_cachepath[PATH_MAX];
 char new_cachepath[PATH_MAX];
-int ret,n;
 
 old_normpath = normalize_path(oldpath);
 if(!old_normpath)
@@ -867,13 +881,16 @@ if(!ret)
 
 new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
 ret = real_symlink(old_cachepath,new_cachepath);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL symlink %s %s",old_cachepath,new_cachepath);
+if(ret == -1)
+	opstate = "MISS";
 
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT symlink %s %s",old_cachepath,new_cachepath);
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 
 cleanup:
+	LOGSEND(l_attr,"%s %s %s%s %s%s",opstate,"symlink",chroot_path,oldpath,chroot_path,newpath);
 	free(old_normpath);
 	free(new_normpath);
 	return real_symlink(oldpath,newpath);
@@ -881,11 +898,13 @@ cleanup:
 
 int rename(const char *oldpath,const char *newpath)
 {
+int ret,n;
+int l_attr = L_STATS;
+char *opstate = "CALL";
 char *old_normpath = NULL;
 char *new_normpath = NULL;
 char old_cachepath[PATH_MAX];
 char new_cachepath[PATH_MAX];
-int ret,n;
 
 old_normpath = normalize_path(oldpath);
 if(!old_normpath)
@@ -908,13 +927,16 @@ if(!ret)
 
 new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
 ret = real_rename(old_cachepath,new_cachepath);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL rename %s %s",old_cachepath,new_cachepath);
+if(ret == -1)
+	opstate = "MISS";
 
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "HIT rename %s %s",old_cachepath,new_cachepath);
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS | L_JOURNAL;
+}
 
 cleanup:
+	LOGSEND(l_attr,"%s %s %s%s %s%s",opstate,"rename",chroot_path,oldpath,chroot_path,newpath);
 	free(old_normpath);
 	free(new_normpath);
 	return real_rename(oldpath,newpath);
@@ -922,11 +944,13 @@ cleanup:
 
 int renameat(int olddirfd,const char *oldpath,int newdirfd,const char *newpath)
 {
+int ret,n;
+int l_attr = L_STATS;
+char *opstate = "CALL";
 char *old_normpath = NULL;
 char *new_normpath = NULL;
 char old_cachepath[PATH_MAX];
 char new_cachepath[PATH_MAX];
-int ret,n;
 
 old_normpath = normalize_pathat(olddirfd,oldpath);
 if(!old_normpath)
@@ -949,13 +973,16 @@ if(!ret)
 
 new_cachepath[n - sizeof(".whiteout") + 1] = '\0';
 ret = real_rename(old_cachepath,new_cachepath);
-if(io_on_off && ret == -1)
-	LOGSEND(L_STATS, "FAIL renameat %s %s",old_cachepath,new_cachepath);
+if(ret == -1)
+	opstate = "MISS";
 
-if(ret == 0)
-	LOGSEND(L_JOURNAL|L_STATS, "CALL renameat %s %s",old_cachepath,new_cachepath);
+if(ret == 0) {
+	opstate = "HIT";
+	l_attr = L_STATS|L_JOURNAL;
+}
 
 cleanup:
+	LOGSEND(l_attr,"%s %s %s%s %s%s",opstate,"renameat",chroot_path,oldpath,chroot_path,newpath);
 	free(old_normpath);
 	free(new_normpath);
 	return real_renameat(olddirfd,oldpath,newdirfd,newpath);

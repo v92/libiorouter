@@ -17,8 +17,7 @@
 
 #define REDIRCHECK(funcstr,func,...) \
 	if(!path || strstr(path,".snapshot")) { \
-                LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \
-                return func(__VA_ARGS__); \
+                goto cleanup; \
         } \
 	if(strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir))) { \
                 LOGSEND(L_STATS, "CALL %s %s",funcstr,path); \

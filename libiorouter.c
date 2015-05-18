@@ -216,7 +216,7 @@ write(logstats_fd,INITSTR,strlen(INITSTR));
 if(logjournal_fd >= 0) {
 	close(logjournal_fd);
 }
-snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d.journal",g_cache_dir,g_rewrite_dir,getpid());
+snprintf(logfile,sizeof(logfile),"%s/libiorouter/%d.journal",g_cache_dir,getpid());
 if((logjournal_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
 		return;
 	}

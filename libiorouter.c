@@ -207,7 +207,7 @@ char logfile[PATH_MAX];
 if(logstats_fd >= 0) {
 	close(logstats_fd);
 }
-snprintf(logfile,sizeof(logfile),"%s/libiorouter/%d.stats",g_cache_dir,g_rewrite_dir,getpid());
+snprintf(logfile,sizeof(logfile),"%s/libiorouter/%d.stats",g_cache_dir,getpid());
 if((logstats_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
 		return;
 	}

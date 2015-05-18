@@ -47,7 +47,7 @@ char *g_cache_dir = NULL;
 size_t g_maxfilesize = 0;
 char *g_rewrite_dir = NULL;
 char *g_whitelist_regex = NULL;
-char chroot_path[PATH_MAX];
+char chroot_path[PATH_MAX] = "";
 
 void ioonoff(int signum)
 {
@@ -207,7 +207,7 @@ char logfile[PATH_MAX];
 if(logstats_fd >= 0) {
 	close(logstats_fd);
 }
-snprintf(logfile,sizeof(logfile),"%s/%s/iostats/%d.stats",g_cache_dir,g_rewrite_dir,getpid());
+snprintf(logfile,sizeof(logfile),"%s/libiorouter/%d.stats",g_cache_dir,g_rewrite_dir,getpid());
 if((logstats_fd = real_creat(logfile,S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH|S_IWOTH)) == -1) {
 		return;
 	}

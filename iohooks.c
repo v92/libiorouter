@@ -779,9 +779,6 @@ strncat(cachepath,path,sizeof(cachepath)-1);
 if(!argpath)
 	return -1;
 
-
-path = normalize_path(argpath);
-
 snprintf((char *) &cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path);
 ret = real_access(cachepath,F_OK);
 if(!ret)

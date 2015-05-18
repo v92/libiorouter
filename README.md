@@ -3,6 +3,8 @@
 src="https://scan.coverity.com/projects/4222/badge.svg"/>
 </a>
 
+Travis Build Status
+
 [![Travis Build Status](https://travis-ci.org/v92/libiorouter.svg?branch=master)](https://travis-ci.org/v92/libiorouter)
 # libiorouter
 libiorouter is LD_PRELOAD library which gives application better control of caching backend filesystem and cache invalidation. It works transparently by hooking IO calls and redirect them to LIBIOR_CACHEDIR which is usually tmpfs (but any other FS can be used).

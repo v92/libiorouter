@@ -1,3 +1,5 @@
+Coverity static check
+
 <a href="https://scan.coverity.com/projects/4222">
 <img alt="Coverity Scan Build Status"
 src="https://scan.coverity.com/projects/4222/badge.svg"/>

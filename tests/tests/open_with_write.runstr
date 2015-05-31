@@ -1,0 +1,5 @@
+LIBIOR_IO=on LIBIOR_REWRITEDIR=/root/libiorouter/tests/nfsmnt LIBIOR_CACHEDIR=/root/libiorouter/tests/run LD_PRELOAD=/root/libiorouter/libiorouter.so strace -s 256 /root/libiorouter/tests/tests/open_with_write /root/libiorouter/tests/nfsmnt/test.php
+set environment LIBIOR_IO=on
+set environment LIBIOR_REWRITEDIR=/root/libiorouter/tests/nfsmnt
+set environment LIBIOR_CACHEDIR=/root/libiorouter/tests/run
+set environment LD_PRELOAD=/root/libiorouter/libiorouter.so

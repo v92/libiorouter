@@ -35,6 +35,8 @@ tearDown() {
 test_open_with_rdwr_io_on() {
 #local init
 test_ts=`date +%s`
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
 
 #run
 LIBIOR_IO=on $TESTDIR/tests/open_with_rdwr $TESTFILE

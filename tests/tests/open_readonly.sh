@@ -6,7 +6,7 @@ setUp() {
 if [ ! -f $TESTDIR/nfsmnt/test.php ]; then
 	dd if=/dev/urandom of=$TESTDIR/nfsmnt/test.php count=10
 fi
-cc -ggdb -o $TESTDIR/tests/open_readonly open_readonly.c
+cc -ggdb -o $TESTDIR/tests/open_readonly $TESTDIR/tests/src/open_readonly.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)

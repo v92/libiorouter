@@ -61,30 +61,29 @@ echo $stracestr >  $TESTDIR/tests/open_with_rdwr_io_on.runstr
 # Expected behaviour:
 # 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
 # 2. open $TESTFILE
-# 3. SHOULD create $CACHEFILE in $LIBIOR_CACHEDIR and copy contents from $TESTFILE
-# 4. because fd is O_WRONLY, reads fail so $CACHEFILE has to be zero in size (content would be read in next open() call)
-# 4. return fd to $TESTFILE
+# 3. return fd to $TESTFILE
+# No files has to be generated in $LIBIOR_CACHEDIR
 
 test_open_with_wronly_io_on() {
 #local init
 test_ts=`date +%s`
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
 
 #run
 LIBIOR_IO=on $TESTDIR/tests/open_with_wronly $TESTFILE
 
+echo $stracestr > $TESTDIR/tests/open_with_wronly_io_on.runstr
 #test
-assertTrue  "$TESTFILE MUST exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE"
 assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
-assertFalse "$TESTFILE MUST have zero size in $CACHEFILE" "[ -s $CACHEFILE ]"
-
-assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
 
 #debug
-file_ts=`stat -c %Z $CACHEFILE`
-local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE $TESTDIR/tests/open_with_wronly_io_on.runstr"
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE"
 }
 
-# Test: Open with writeonly access with IO routing on
+# Test: Open with writeonly access with IO routing off
 # Expected behaviour:
 # 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
 # 2. open $TESTFILE
@@ -92,6 +91,8 @@ local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wro
 
 test_open_with_wronly_io_off() {
 #local init
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
 
 #run
 LIBIOR_IO=off $TESTDIR/tests/open_with_wronly $TESTFILE

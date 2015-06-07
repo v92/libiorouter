@@ -277,7 +277,7 @@ int open(const char *argpath,int flags,...)
 		ret2 = real_creat(path,S_IRUSR|S_IWUSR);
 		goto cleanup;
 	}	
-	if(flags & (O_WRONLY | O_APPEND | O_CREAT | O_TRUNC | O_DIRECTORY)) {
+	if(flags & (O_WRONLY | O_RDWR | O_APPEND | O_CREAT | O_TRUNC | O_DIRECTORY)) {
 		snprintf(cachepath,sizeof(cachepath),"%s%s",g_cache_dir,path);
 		if(!real_access(cachepath,F_OK)) {
 			real_unlink(cachepath);

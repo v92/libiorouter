@@ -151,6 +151,7 @@ static void libiorouter_init(void)
 char commpath[PATH_MAX],comm[PATH_MAX];
 int commfd,n;
 HOOK("open",real_open);
+HOOK("open64",real_open);
 HOOK("bfd_openw",real_bfd_openw);
 /*HOOK("fopen",real_fopen);*/
 HOOK("creat",real_creat);

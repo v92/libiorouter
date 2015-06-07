@@ -21,8 +21,7 @@
 		return -1; \
 	} \
 	if(	strstr((pathvar),".snapshot") || \
-		strncmp((pathvar),g_rewrite_dir,strlen(g_rewrite_dir)) || \
-		strncmp(chroot_path,g_rewrite_dir,strlen(g_rewrite_dir)) \
+		strncmp((pathvar),g_rewrite_dir,strlen(g_rewrite_dir)) \
 	) { \
 		goto miss; \
         }

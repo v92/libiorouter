@@ -268,7 +268,6 @@ int open(const char *argpath,int flags,...)
 	int l_attr = L_STATS;
 
 	strncpy(cachepath,g_cache_dir,PATH_MAX-1);
-
 	path = normalize_path(argpath);
 
 	REDIRCHECK(path);
@@ -279,11 +278,11 @@ int open(const char *argpath,int flags,...)
 		goto cleanup;
 	}	
 	if(flags & (O_WRONLY | O_APPEND | O_CREAT | O_TRUNC | O_DIRECTORY)) {
-		snprintf(cachepath,sizeof(cachepath),"/run%s",path);
+		snprintf(cachepath,sizeof(cachepath),"%s%s",g_cache_dir,path);
 		if(!real_access(cachepath,F_OK)) {
 			real_unlink(cachepath);
 		}
-		n = snprintf(cachepath,sizeof(cachepath),"/run%s.whiteout",path);
+		n = snprintf(cachepath,sizeof(cachepath),"%s%s.whiteout",g_cache_dir,path);
 		if(!real_access(cachepath,F_OK)) {
 			real_unlink(cachepath);
 		}
@@ -328,7 +327,7 @@ miss:
 		}
 	}
 cleanup:
-	LOGSEND(l_attr, "%s %s %s%s",opstate,"open",chroot_path,cachepath); 
+	LOGSEND(l_attr, "%s %s %s%s",opstate,"open",chroot_path,path); 
 	free(path);
 	return ret2;
 }

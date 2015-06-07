@@ -320,7 +320,8 @@ miss:
 	if(io_on_off && ret == -1) {
 		struct stat oldstat;
 		if(ret2 >= 0 && !fstat(ret2,&oldstat))  {
-			copy_entry(argpath,ret2,&oldstat,cachepath);
+			if(flags & (O_RDONLY|O_RDWR))
+				copy_entry(argpath,ret2,&oldstat,cachepath);
 		}
 		if(ret2 == -1 && errno != ENOTDIR) {
 			create_whiteout(cachepath);

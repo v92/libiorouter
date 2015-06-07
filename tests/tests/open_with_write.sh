@@ -2,13 +2,18 @@
 #!/bin/bash
 ROOTDIR=${PWD%*/*/*}
 TESTDIR=$ROOTDIR/tests
-TESTFILE=$TESTDIR/run$TESTDIR/nfsmnt/test.php
+CACHEFILE=$TESTDIR/run/${TESTDIR:1}/nfsmnt/test.php
+TESTFILE=$TESTDIR/nfsmnt/test.php
+LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt
+LIBIOR_CACHEDIR=$TESTDIR/run
+LD_PRELOAD=$ROOTDIR/libiorouter.so
 
 setUp() {
 if [ ! -f $TESTDIR/nfsmnt/test.php ]; then
 	dd if=/dev/urandom of=$TESTDIR/nfsmnt/test.php count=10
 fi
-cc -ggdb -o $TESTDIR/tests/open_with_write $TESTDIR/tests/src/open_with_write.c
+cc -ggdb -o $TESTDIR/tests/open_with_wronly $TESTDIR/tests/src/open_with_wronly.c
+cc -ggdb -o $TESTDIR/tests/open_with_rdwr $TESTDIR/tests/src/open_with_rdwr.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
@@ -21,36 +26,53 @@ tearDown() {
 }
 
 
-test_open_with_write_io_on() {
+test_open_with_rdwr_io_on() {
+#local init
 test_ts=`date +%s`
-LIBIOR_IO=on LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt LIBIOR_CACHEDIR=$TESTDIR/run LD_PRELOAD=$ROOTDIR/libiorouter.so $TESTDIR/tests/open_with_write $TESTDIR/nfsmnt/test.php
-echo LIBIOR_IO=on LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt LIBIOR_CACHEDIR=$TESTDIR/run LD_PRELOAD=$ROOTDIR/libiorouter.so strace -s 256 $TESTDIR/tests/open_with_write $TESTDIR/nfsmnt/test.php > $TESTDIR/tests/open_with_write_io_on.runstr
 
-cat << EOF >> $TESTDIR/tests/open_with_write_io_on.runstr
-set environment LIBIOR_IO=on
-set environment LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt
-set environment LIBIOR_CACHEDIR=$TESTDIR/run
-set environment LD_PRELOAD=$ROOTDIR/libiorouter.so
-EOF
-assertTrue "$TESTDIR/nfsmnt/test.php MUST exist in $TESTDIR/run/$TESTIDR" "[ -f $TESTFILE ]"
-assertFalse "$TESTDIR/nfsmnt/test.php MUST have zero size in $TESTFILE" "[ -s $TESTFILE ]"
-file_ts=`stat -c %Z $TESTFILE`
-assertTrue "$TESTFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
+#run
+LIBIOR_IO=on $TESTDIR/tests/open_with_rdwr $TESTFILE
+
+#test
+assertTrue "$TESTFILE MUST exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE MUST have zero size as a $CACHEFILE" "[ -s $CACHEFILE ]"
+file_ts=`stat -c %Z $CACHEFILE`
+
+#debug
+assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
+
+local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_rdwr $TESTFILE $TESTDIR/tests/open_with_rdwe_io_on.runstr"
 }
 
-test_open_with_write_io_off() {
-LIBIOR_IO=off LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt LIBIOR_CACHEDIR=$TESTDIR/run LD_PRELOAD=$ROOTDIR/libiorouter.so $TESTDIR/tests/open_with_write $TESTDIR/nfsmnt/test.php
-echo LIBIOR_IO=off LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt LIBIOR_CACHEDIR=$TESTDIR/run LD_PRELOAD=$ROOTDIR/libiorouter.so strace -s 256 $TESTDIR/tests/open_with_write $TESTDIR/nfsmnt/test.php > $TESTDIR/tests/open_with_write_io_off.runstr
+test_open_with_wronly_io_on() {
+#local init
+test_ts=`date +%s`
 
-cat << EOF >> $TESTDIR/tests/open_with_write_io_off.runstr
-set environment LIBIOR_IO=off
-set environment LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt
-set environment LIBIOR_CACHEDIR=$TESTDIR/run
-set environment LD_PRELOAD=$ROOTDIR/libiorouter.so
-EOF
+#run
+LIBIOR_IO=on $TESTDIR/tests/open_with_wronly $TESTFILE
 
-assertFalse "$TESTDIR/nfsmnt/test.php MUST NOT exist in ${TESTFILE:h}" "[ -f $TESTFILE ]"
+#test
+assertTrue "$TESTFILE MUST exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE MUST have zero size in $CACHEFILE" "[ -s $CACHEFILE ]"
+file_ts=`stat -c %Z $CACHEFILE`
+
+#debug
+assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
+
+local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE $TESTDIR/tests/open_with_wronly_io_on.runstr"
 }
 
+test_open_with_wronly_io_off() {
+#local init
+
+#run
+LIBIOR_IO=off $TESTDIR/tests/open_with_wronly $TESTFILE
+
+#test
+assertFalse "$TESTFILE MUST not exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+
+#debug
+local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE $TESTDIR/tests/open_with_wronly_io_on.runstr"
+}
 
 source "/usr/share/shunit2/shunit2"

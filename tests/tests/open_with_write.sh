@@ -46,44 +46,25 @@ assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $C
 echo "LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_$fn $TESTFILE" > $TESTDIR/tests/open_with_${fn}_io_${io}.runstr
 }
 
-# test: Open with readwrite access with IO routing on
+# test: Open with write/append/trunc/creat flags with IO routing on or off
 # expected behaviour:
 # 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
 # 2. open $TESTFILE
-# 3. SHOULD create $CACHEFILE in $LIBIOR_CACHEDIR and copy contents from $TESTFILE 
-# 4. return fd to $TESTFILE
+# 3. return fd to $TESTFILE
+# No files has to be generated in $LIBIOR_CACHEDIR
 
 test_open_with_rdwr_io_on() {
 	do_test_with_params "rdwr" "on"
 
 }
 
-# Test: Open with writeonly access with IO routing on
-# Expected behaviour:
-# 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
-# 2. open $TESTFILE
-# 3. return fd to $TESTFILE
-# No files has to be generated in $LIBIOR_CACHEDIR
-
 test_open_with_wronly_io_on() {
 	do_test_with_params "wronly" "on"
 }
 
-# Test: Open with writeonly access with IO routing off
-# Expected behaviour:
-# 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
-# 2. open $TESTFILE
-# 3. return fd to $TESTFILE
-
 test_open_with_wronly_io_off() {
 	do_test_with_params "wronly" "off"
 }
-
-# Test: Open with O_APPEND with IO routing ON and OFF
-# Expected behaviour:
-# 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
-# 2. open $TESTFILE 
-# 3. return fd to $TESTFILE
 
 test_open_with_append_io_on() {
 	do_test_with_params "append" "on"

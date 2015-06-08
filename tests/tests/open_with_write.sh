@@ -1,4 +1,3 @@
-# Test if file is deleted from caching directory during IO routing ON
 #!/bin/bash
 ROOTDIR=${PWD%*/*/*}
 TESTDIR=$ROOTDIR/tests
@@ -14,6 +13,7 @@ if [ ! -f $TESTDIR/nfsmnt/test.php ]; then
 fi
 cc -ggdb -o $TESTDIR/tests/open_with_wronly $TESTDIR/tests/src/open_with_wronly.c
 cc -ggdb -o $TESTDIR/tests/open_with_rdwr $TESTDIR/tests/src/open_with_rdwr.c
+cc -ggdb -o $TESTDIR/tests/open_with_append $TESTDIR/tests/src/open_with_append.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
@@ -42,17 +42,17 @@ touch $CACHEFILE.whiteout
 LIBIOR_IO=on $TESTDIR/tests/open_with_rdwr $TESTFILE
 
 #test
-assertTrue "$TESTFILE MUST exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
 assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
 
-cache_md5sum=`md5sum $CACHEFILE`
-cache_md5sum=${cache_md5sum% *}
-testfile_md5sum=`md5sum $TESTFILE`
-testfile_md5sum=${testfile_md5sum% *}
-assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
+#cache_md5sum=`md5sum $CACHEFILE`
+#cache_md5sum=${cache_md5sum% *}
+#testfile_md5sum=`md5sum $TESTFILE`
+#testfile_md5sum=${testfile_md5sum% *}
+#assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
 
-file_ts=`stat -c %Z $CACHEFILE`
-assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
+#file_ts=`stat -c %Z $CACHEFILE`
+#assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
 
 #debug
 local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_rdwr $TESTFILE"
@@ -105,6 +105,45 @@ assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $C
 
 #debug
 local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE $TESTDIR/tests/open_with_wronly_io_on.runstr"
+}
+
+# Test: Open with O_APPEND with IO routing ON and OFF
+# Expected behaviour:
+# 1. MUST delete old $CACHEFILE and $CACHEFILE.whiteout from $LIBIOR_CACHEDIR
+# 2. open $TESTFILE 
+# 3. return fd to $TESTFILE
+
+test_open_with_append_io_on() {
+#local init
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
+
+#run
+LIBIOR_IO=on $TESTDIR/tests/open_with_append $TESTFILE
+
+#test
+assertFalse "$TESTFILE MUST not exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
+
+#debug
+local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_append $TESTFILE $TESTDIR/tests/open_with_append_io_on.runstr"
+}
+
+test_open_with_append_io_off() {
+#local init
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
+
+#run
+LIBIOR_IO=off $TESTDIR/tests/open_with_append $TESTFILE
+
+#test
+assertFalse "$TESTFILE MUST not exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
+
+#debug
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_append $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/open_with_append_io_off.runstr
 }
 
 source "/usr/share/shunit2/shunit2"

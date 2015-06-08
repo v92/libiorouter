@@ -15,6 +15,7 @@ cc -ggdb -o $TESTDIR/tests/open_with_wronly $TESTDIR/tests/src/open_with_wronly.
 cc -ggdb -o $TESTDIR/tests/open_with_rdwr $TESTDIR/tests/src/open_with_rdwr.c
 cc -ggdb -o $TESTDIR/tests/open_with_append $TESTDIR/tests/src/open_with_append.c
 cc -ggdb -o $TESTDIR/tests/open_with_create $TESTDIR/tests/src/open_with_create.c
+cc -ggdb -o $TESTDIR/tests/open_with_trunc $TESTDIR/tests/src/open_with_trunc.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
@@ -98,6 +99,14 @@ test_open_with_create_io_on() {
 
 test_open_with_create_io_off() {
 	do_test_with_params "create" "off"
+}
+
+test_open_with_trunc_io_on() {
+	do_test_with_params "trunc" "on"
+}
+
+test_open_with_trunc_io_off() {
+	do_test_with_params "trunc" "off"
 }
 
 source "/usr/share/shunit2/shunit2"

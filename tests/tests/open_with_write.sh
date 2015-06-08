@@ -18,11 +18,30 @@ cc -ggdb -o $TESTDIR/tests/open_with_append $TESTDIR/tests/src/open_with_append.
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
 fi
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
 }
 
 tearDown() {
 	:;
 	#rm -f $TESTDIR/tests/open_with_wronly $TESTDIR/tests/open_with_rdwr $TESTDIR/test/*.runstr
+}
+
+do_test_with_params() {
+local fn=$1
+local io=$2
+if [[ -z "$fn" || -z "$io" ]]; then
+	fail "Wront parameters for do_test_with_params($fn,$io)"
+	return 1
+fi
+#run
+LIBIOR_IO=$io $TESTDIR/tests/open_with_$fn $TESTFILE
+
+#test
+assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
+assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
+
+echo "LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_$fn $TESTFILE" > $TESTDIR/tests/open_with_${fn}_io_${io}.runstr
 }
 
 # test: Open with readwrite access with IO routing on
@@ -33,30 +52,8 @@ tearDown() {
 # 4. return fd to $TESTFILE
 
 test_open_with_rdwr_io_on() {
-#local init
-test_ts=`date +%s`
-touch $CACHEFILE
-touch $CACHEFILE.whiteout
+	do_test_with_params "rdwr" "on"
 
-#run
-LIBIOR_IO=on $TESTDIR/tests/open_with_rdwr $TESTFILE
-
-#test
-assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
-assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
-
-#cache_md5sum=`md5sum $CACHEFILE`
-#cache_md5sum=${cache_md5sum% *}
-#testfile_md5sum=`md5sum $TESTFILE`
-#testfile_md5sum=${testfile_md5sum% *}
-#assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
-
-#file_ts=`stat -c %Z $CACHEFILE`
-#assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
-
-#debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_rdwr $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/open_with_rdwr_io_on.runstr
 }
 
 # Test: Open with writeonly access with IO routing on
@@ -67,22 +64,7 @@ echo $stracestr >  $TESTDIR/tests/open_with_rdwr_io_on.runstr
 # No files has to be generated in $LIBIOR_CACHEDIR
 
 test_open_with_wronly_io_on() {
-#local init
-test_ts=`date +%s`
-touch $CACHEFILE
-touch $CACHEFILE.whiteout
-
-#run
-LIBIOR_IO=on $TESTDIR/tests/open_with_wronly $TESTFILE
-
-echo $stracestr > $TESTDIR/tests/open_with_wronly_io_on.runstr
-#test
-assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE"
-assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
-
-#debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE"
+	do_test_with_params "wronly" "on"
 }
 
 # Test: Open with writeonly access with IO routing off
@@ -92,19 +74,7 @@ local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHED
 # 3. return fd to $TESTFILE
 
 test_open_with_wronly_io_off() {
-#local init
-touch $CACHEFILE
-touch $CACHEFILE.whiteout
-
-#run
-LIBIOR_IO=off $TESTDIR/tests/open_with_wronly $TESTFILE
-
-#test
-assertFalse "$TESTFILE MUST not exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
-assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
-
-#debug
-local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wronly $TESTFILE $TESTDIR/tests/open_with_wronly_io_on.runstr"
+	do_test_with_params "wronly" "off"
 }
 
 # Test: Open with O_APPEND with IO routing ON and OFF
@@ -114,36 +84,11 @@ local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_wro
 # 3. return fd to $TESTFILE
 
 test_open_with_append_io_on() {
-#local init
-touch $CACHEFILE
-touch $CACHEFILE.whiteout
-
-#run
-LIBIOR_IO=on $TESTDIR/tests/open_with_append $TESTFILE
-
-#test
-assertFalse "$TESTFILE MUST not exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
-assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
-
-#debug
-local stracestr="LIBIOR_IO=on $RUNSTR strace -s 256 $TESTDIR/tests/open_with_append $TESTFILE $TESTDIR/tests/open_with_append_io_on.runstr"
+	do_test_with_params "append" "on"
 }
 
 test_open_with_append_io_off() {
-#local init
-touch $CACHEFILE
-touch $CACHEFILE.whiteout
-
-#run
-LIBIOR_IO=off $TESTDIR/tests/open_with_append $TESTFILE
-
-#test
-assertFalse "$TESTFILE MUST not exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
-assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
-
-#debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_append $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/open_with_append_io_off.runstr
+	do_test_with_params "append" "off"
 }
 
 source "/usr/share/shunit2/shunit2"

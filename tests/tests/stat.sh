@@ -13,7 +13,7 @@ if [ ! -f $TESTDIR/nfsmnt/test.php ]; then
 fi
 test -d $TESTDIR/tests/bin || mkdir $TESTDIR/tests/bin
 test -d $TESTDIR/tests/logs || mkdir $TESTDIR/tests/logs
-cc -ggdb -o $TESTDIR/tests/stat $TESTDIR/tests/src/stat.c
+cc -ggdb -o $TESTDIR/tests/bin/stat $TESTDIR/tests/src/stat.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
@@ -39,7 +39,7 @@ rm -f $CACHEFILE
 rm -f $CACHEFILE.whiteout
 
 #run
-LIBIOR_IO=on strace -e stat -o stat_io.strace $TESTDIR/tests/stat $TESTFILE
+LIBIOR_IO=on strace -e stat -o stat_io.strace $TESTDIR/tests/bin/stat $TESTFILE
 stated_file=`awk -F\" 'END{print $2}' stat_io.strace`
 #test
 
@@ -55,8 +55,8 @@ file_ts=`stat -c %Z $CACHEFILE`
 assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
 
 #debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/stat $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/stat.runstr
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/bin/stat $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/stat.runstr
 }
 
 # test: stat file on MISS,IO off
@@ -71,7 +71,7 @@ test_stat_io_off_miss() {
 test_ts=`date +%s`
 
 #run
-LIBIOR_IO=off strace -e stat -o stat_io.strace $TESTDIR/tests/stat $TESTFILE
+LIBIOR_IO=off strace -e stat -o stat_io.strace $TESTDIR/tests/bin/stat $TESTFILE
 stated_file=`awk -F\" 'END{print $2}' stat_io.strace`
 #test
 
@@ -82,14 +82,15 @@ assertEquals "Wrong stat()ed file: " "$TESTFILE" "$stated_file"
 # test: stat file on HIT, IO on
 # init: cache is hot
 # expected behaviour:
-# 1. check if file exist in $LIBIOR_CACHEDIR (it does not)
-# 2. stat $CACHEFILE
+# 1. stat $CACHEFILE
+# 2. return stat buffer for $CACHEFILE
+
 
 test_stat_io_on_hit() {
 #local init
 
 #run
-LIBIOR_IO=on strace -e stat -o stat_io.strace $TESTDIR/tests/stat $TESTFILE
+LIBIOR_IO=on strace -e stat -o stat_io.strace $TESTDIR/tests/bin/stat $TESTFILE
 stated_file=`awk -F\" 'END{print $2}' stat_io.strace`
 #test
 
@@ -102,8 +103,8 @@ assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum
 assertEquals "Wrong stat()ed file: " "$CACHEFILE" "$stated_file"
 
 #debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/stat $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/stat.runstr
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/bin/stat $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/stat.runstr
 }
 
 # test: stat file on HIT,IO off
@@ -117,14 +118,14 @@ test_stat_io_off_hit() {
 touch $CACHEFILE
 
 #run
-LIBIOR_IO=off strace -e stat -o stat_io.strace $TESTDIR/tests/stat $TESTFILE
+LIBIOR_IO=off strace -e stat -o stat_io.strace $TESTDIR/tests/bin/stat $TESTFILE
 stated_file=`awk -F\" 'END{print $2}' stat_io.strace`
 
 #test
 
 assertEquals "Wrong stat()ed file: " "$TESTFILE" "$stated_file"
-local stracestr="LIBIOR_IO=off LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/stat $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/stat.runstr
+local stracestr="LIBIOR_IO=off LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/bin/stat $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/stat.runstr
 }
 
 source "/usr/share/shunit2/shunit2"

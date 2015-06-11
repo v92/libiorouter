@@ -11,11 +11,13 @@ setUp() {
 if [ ! -f $TESTDIR/nfsmnt/test.php ]; then
 	dd if=/dev/urandom of=$TESTDIR/nfsmnt/test.php count=10
 fi
-cc -ggdb -o $TESTDIR/tests/open_with_wronly $TESTDIR/tests/src/open_with_wronly.c
-cc -ggdb -o $TESTDIR/tests/open_with_rdwr $TESTDIR/tests/src/open_with_rdwr.c
-cc -ggdb -o $TESTDIR/tests/open_with_append $TESTDIR/tests/src/open_with_append.c
-cc -ggdb -o $TESTDIR/tests/open_with_create $TESTDIR/tests/src/open_with_create.c
-cc -ggdb -o $TESTDIR/tests/open_with_trunc $TESTDIR/tests/src/open_with_trunc.c
+test -d $TESTDIR/tests/bin || mkdir $TESTDIR/tests/bin
+test -d $TESTDIR/tests/logs || mkdir $TESTDIR/tests/logs
+cc -ggdb -o $TESTDIR/tests/bin/open_with_wronly $TESTDIR/tests/src/open_with_wronly.c
+cc -ggdb -o $TESTDIR/tests/bin/open_with_rdwr $TESTDIR/tests/src/open_with_rdwr.c
+cc -ggdb -o $TESTDIR/tests/bin/open_with_append $TESTDIR/tests/src/open_with_append.c
+cc -ggdb -o $TESTDIR/tests/bin/open_with_create $TESTDIR/tests/src/open_with_create.c
+cc -ggdb -o $TESTDIR/tests/bin/open_with_trunc $TESTDIR/tests/src/open_with_trunc.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
@@ -43,7 +45,7 @@ LIBIOR_IO=$io $TESTDIR/tests/open_with_$fn $TESTFILE
 assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
 assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
 
-echo "LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_$fn $TESTFILE" > $TESTDIR/tests/open_with_${fn}_io_${io}.runstr
+echo "LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_$fn $TESTFILE" > $TESTDIR/tests/logs/open_with_${fn}_io_${io}.runstr
 }
 
 # test: Open with write/append/trunc/creat flags with IO routing on or off

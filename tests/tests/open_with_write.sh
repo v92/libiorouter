@@ -39,7 +39,7 @@ if [[ -z "$fn" || -z "$io" ]]; then
 	return 1
 fi
 #run
-LIBIOR_IO=$io $TESTDIR/tests/open_with_$fn $TESTFILE
+LIBIOR_IO=$io $TESTDIR/tests/bin/open_with_$fn $TESTFILE
 
 #test
 assertFalse "$TESTFILE MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"

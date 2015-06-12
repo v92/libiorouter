@@ -13,7 +13,7 @@ if [ ! -f $TESTDIR/nfsmnt/test.php ]; then
 fi
 test -d $TESTDIR/tests/bin || mkdir $TESTDIR/tests/bin
 test -d $TESTDIR/tests/logs || mkdir $TESTDIR/tests/logs
-cc -ggdb -o $TESTDIR/tests/open_with_readonly $TESTDIR/tests/src/open_with_readonly.c
+cc -ggdb -o $TESTDIR/tests/bin/open_with_readonly $TESTDIR/tests/src/open_with_readonly.c
 
 if [ ! -f $ROOTDIR/libiorouter.so ]; then 
 	( cd $ROOTDIR && make)
@@ -40,7 +40,7 @@ rm -f $CACHEFILE
 rm -f $CACHEFILE.whiteout
 
 #run
-LIBIOR_IO=on strace -e open -o open_with_readonly_io.strace $TESTDIR/tests/open_with_readonly $TESTFILE
+LIBIOR_IO=on strace -e open -o open_with_readonly_io.strace $TESTDIR/tests/bin/open_with_readonly $TESTFILE
 opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
 #test
 assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
@@ -58,7 +58,7 @@ assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$t
 
 #debug
 local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/open_with_readonly.runstr
+echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
 }
 
 # test: Open with readonly access with IO routing on
@@ -72,7 +72,7 @@ test_open_with_readonly_io_on_hit() {
 #local init
 
 #run
-LIBIOR_IO=on strace -e open -o open_with_readonly_io.strace $TESTDIR/tests/open_with_readonly $TESTFILE
+LIBIOR_IO=on strace -e open -o open_with_readonly_io.strace $TESTDIR/tests/bin/open_with_readonly $TESTFILE
 opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
 rm open_with_readonly_io.strace
 
@@ -83,7 +83,7 @@ assertEquals "Wrongly opened file: " "$CACHEFILE" "$opened_file"
 
 #debug
 local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/open_with_readonly.runstr
+echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly.runstr
 }
 
 source "/usr/share/shunit2/shunit2"

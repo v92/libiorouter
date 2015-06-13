@@ -40,11 +40,17 @@ opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
 assertFalse "$TESTFILE whiteout MUST NOT exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE.whiteout ]"
 
 assertTrue "$TESTFILE MUST exist in `dirname $CACHEFILE`" "[ -f $CASHEFILE ]" || exit $?
-cache_md5sum=`md5sum $CACHEFILE`
-cache_md5sum=${cache_md5sum% *}
-testfile_md5sum=`md5sum $TESTFILE`
-testfile_md5sum=${testfile_md5sum% *}
-assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
+if [ "$LIBIOR_MAXFILESIZE" -gt "$testfile_size" ]; then
+        cache_md5sum=`md5sum $CACHEFILE`
+        cache_md5sum=${cache_md5sum% *}
+        testfile_md5sum=`md5sum $TESTFILE`
+        testfile_md5sum=${testfile_md5sum% *}
+        assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
+else
+        cachefile_size=`stat -c %s $CACHEFILE`
+        assertEquals "$CACHEFILE MUST have zero size if $TESTFILE is bigger than LIBIOR_MAXFILESIZE ($LIBIOR_MAXFILESIZE):" "0" "$cachefile_size"
+fi
+
 assertEquals "Wrong opened file: " "$TESTFILE" "$opened_file"
 
 file_ts=`stat -c %Z $CACHEFILE`
@@ -73,7 +79,19 @@ rm open_with_readonly_io.strace
 assertTrue "$TESTFILE MUST exist in `dirname $CACHEFILE`" "[ -f $CACHEFILE ]"
 assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
 
-assertEquals "Wrongly opened file: " "$CACHEFILE" "$opened_file"
+if [ "$LIBIOR_MAXFILESIZE" -gt "$testfile_size" ]; then
+        cache_md5sum=`md5sum $CACHEFILE`
+        cache_md5sum=${cache_md5sum% *}
+        testfile_md5sum=`md5sum $TESTFILE`
+        testfile_md5sum=${testfile_md5sum% *}
+        assertEquals "$TESTFILE MUST have same md5sum as a $CACHEFILE" "$testfile_md5sum" "$cache_md5sum"
+	assertEquals "Wrongly opened file: " "$CACHEFILE" "$opened_file"
+else
+        cachefile_size=`stat -c %s $CACHEFILE`
+        assertEquals "$CACHEFILE MUST have zero size if $TESTFILE is bigger than LIBIOR_MAXFILESIZE ($LIBIOR_MAXFILESIZE):" "0" "$cachefile_size"
+	assertEquals "Wrongly opened file: " "$TESTFILE" "$opened_file"
+fi
+
 
 #debug
 local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"

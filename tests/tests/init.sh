@@ -7,3 +7,4 @@ export LIBIOR_MAXFILESIZE=10485760
 export LIBIOR_REWRITEDIR=$TESTDIR/nfsmnt
 export LIBIOR_CACHEDIR=$TESTDIR/run
 export LD_PRELOAD=$ROOTDIR/libiorouter.so
+export testfile_size=`stat -c %s $TESTFILE`

@@ -20,6 +20,8 @@ tearDown() {
 }
 
 # test: Open with readonly access with IO routing on
+# if file is bigger than $LIBIOR_MAXFILESIZE then return opened $TESTFILE and create CACHEFILE with zero size
+# if file is smaller than $LIBIOR_MAXFILESIZE then return opened $CACHEFILE
 # init: cache miss (is empty), no whiteouts
 # expected behaviour:
 # 1. check if file exist in $LIBIOR_CACHEDIR
@@ -62,6 +64,8 @@ echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
 }
 
 # test: Open with readonly access with IO routing on
+# if file is bigger than $LIBIOR_MAXFILESIZE then return opened $TESTFILE and create CACHEFILE with zero size
+# if file is smaller than $LIBIOR_MAXFILESIZE then return opened $CACHEFILE
 # init: cache hit,no whiteouts
 # expected behaviour:
 # 1. check if file exist in $LIBIOR_CACHEDIR

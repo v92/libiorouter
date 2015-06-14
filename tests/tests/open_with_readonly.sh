@@ -63,6 +63,30 @@ local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHED
 echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
 }
 
+# test: Open with readonly access with IO routing off
+# always return $TESTFILE
+# init: cache miss (is empty), no whiteouts
+# expected behaviour:
+# 1. open $TESTFILE
+# 2. return fd to $TESTFILE
+
+test_open_with_readonly_io_off_miss() {
+#local init
+test_ts=`date +%s`
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
+
+#run
+LIBIOR_IO=off strace -e open -o open_with_readonly_io.strace $TESTDIR/tests/bin/open_with_readonly $TESTFILE
+opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
+#test
+assertEquals "Wrong opened file: " "$TESTFILE" "$opened_file"
+
+#debug
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
+}
+
 # test: Open with readonly access with IO routing on
 # if file is bigger than $LIBIOR_MAXFILESIZE then return opened $TESTFILE and create CACHEFILE with zero size
 # if file is smaller than $LIBIOR_MAXFILESIZE then return opened $CACHEFILE
@@ -100,6 +124,30 @@ fi
 #debug
 local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
 echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly.runstr
+}
+
+# test: Open with readonly access with IO routing off
+# always return $TESTFILE
+# init: cache miss (is empty), no whiteouts
+# expected behaviour:
+# 1. open $TESTFILE
+# 2. return fd to $TESTFILE
+
+test_open_with_readonly_io_off_hit() {
+#local init
+test_ts=`date +%s`
+touch $CACHEFILE
+touch $CACHEFILE.whiteout
+
+#run
+LIBIOR_IO=off strace -e open -o open_with_readonly_io.strace $TESTDIR/tests/bin/open_with_readonly $TESTFILE
+opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
+#test
+assertEquals "Wrong opened file: " "$TESTFILE" "$opened_file"
+
+#debug
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
 }
 
 source "/usr/share/shunit2/shunit2"

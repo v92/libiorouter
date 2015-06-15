@@ -59,8 +59,8 @@ file_ts=`stat -c %Z $CACHEFILE`
 assertTrue "$CACHEFILE has to be newer than timestamp of test start (`date -d@$test_ts`)" "[ "$file_ts" -ge "$test_ts" ]"
 
 #debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD strace -s 256 $TESTDIR/tests/bin/open_with_readonly $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly_io_on_miss.runstr
 }
 
 # test: Open with readonly access with IO routing off
@@ -83,8 +83,8 @@ opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
 assertEquals "Wrong opened file: " "$TESTFILE" "$opened_file"
 
 #debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
+local stracestr="LIBIOR_IO=off LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD strace -s 256 $TESTDIR/tests/bin/open_with_readonly $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly_io_off_miss.runstr
 }
 
 # test: Open with readonly access with IO routing on
@@ -122,8 +122,8 @@ fi
 
 
 #debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly.runstr
+local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD strace -s 256 $TESTDIR/tests/bin/open_with_readonly $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly_io_on_hit.runstr
 }
 
 # test: Open with readonly access with IO routing off
@@ -146,8 +146,8 @@ opened_file=`awk -F\" 'END{print $2}' open_with_readonly_io.strace`
 assertEquals "Wrong opened file: " "$TESTFILE" "$opened_file"
 
 #debug
-local stracestr="LIBIOR_IO=on LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD $RUNSTR strace -s 256 $TESTDIR/tests/open_with_readonly $TESTFILE"
-echo $stracestr >  $TESTDIR/tests/bin/open_with_readonly.runstr
+local stracestr="LIBIOR_IO=off LIBIOR_REWRITEDIR=$LIBIOR_REWRITEDIR LIBIOR_CACHEDIR=$LIBIOR_CACHEDIR LD_PRELOAD=$LD_PRELOAD strace -s 256 $TESTDIR/tests/bin/open_with_readonly $TESTFILE"
+echo $stracestr >  $TESTDIR/tests/logs/open_with_readonly_io_off_hit.runstr
 }
 
 source "/usr/share/shunit2/shunit2"

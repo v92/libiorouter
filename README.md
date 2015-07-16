@@ -41,7 +41,7 @@ libiorouter can be controled in two ways:
 * signals
 
 Environment with their defauls are as follows:
-* LIBIOR_IO = (yes|no) [no] - turns caching on or off. It won't cache but it will still try to execute IO operations that changes metadata (chown,chmod,rmdir,unlink) in LIBIOR_CACHEDIR .
+* LIBIOR_IO = (on|off) [off] - turns caching on or off. It won't cache but it will still try to execute IO operations that changes metadata (chown,chmod,rmdir,unlink) in LIBIOR_CACHEDIR .
 * LIBIOR_CACHEDIR - [/run] - sets directory where backend directory is going to be shadowed / cached .
 * LIBIOR_REWRITEDIR - [/nfsmnt] - sets backend directory which will be shadowed / cached to LIBIOR_CACHEDIR .
 * LIBIOR_MAXFILESIZE - [10MB] - sets maximum file size which will be cached in LIBIOR_CACHEDIR. Value is in bytes.

@@ -279,6 +279,7 @@ return 0;
 
 void create_whiteout(char *wpath)
 {
+return;
 char *dup_wpath;
 int ret = 0;
 if(strstr(wpath,".whiteout"))

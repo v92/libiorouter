@@ -333,6 +333,7 @@ cleanup:
 	return ret2;
 }
 
+/*
 DIR *opendir(const char *argpath)
 {
 	DIR *ret = NULL,*ret2 = NULL;
@@ -375,9 +376,9 @@ DIR *opendir(const char *argpath)
 		if(!prev_dirp) 
 			goto miss;
 
-		(void) readdir_r(ret,prev_dirp,&dirp); 	 /* . */
-		(void) readdir_r(ret,prev_dirp,&dirp);	 /* .. */
-		(void) readdir_r(ret,prev_dirp,&dirp);   /* 1st dir entry  */
+		(void) readdir_r(ret,prev_dirp,&dirp); 	 
+		(void) readdir_r(ret,prev_dirp,&dirp);
+		(void) readdir_r(ret,prev_dirp,&dirp);
 
 		if(dirp) {
 			seekdir(ret,0);
@@ -402,7 +403,7 @@ cleanup:
 	free(path);
 	return ret2;
 }
-
+*/
 void *bfd_openw(const char *filename,const char *target)
 {
 	char whiteoutpath[PATH_MAX];

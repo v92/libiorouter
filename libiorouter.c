@@ -306,6 +306,8 @@ if(!path)
 
 path_bn = strrchr(path,'/');
 
+if(!path_bn)
+	return -1;
 *path_bn = '\0';
 
 if(real_xstat(1,path,&spath) == -1) {

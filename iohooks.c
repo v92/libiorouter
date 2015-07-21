@@ -350,6 +350,9 @@ DIR *opendir(const char *argpath)
                 errno = EFAULT; 
                 return NULL; 
         } 
+
+	strncat(cachepath,path,sizeof(cachepath)-1);
+
         if(     strstr(path,".snapshot") ||
                 strncmp(path,g_rewrite_dir,strlen(g_rewrite_dir)) || 
                 strncmp(chroot_path,g_rewrite_dir,strlen(g_rewrite_dir))
@@ -362,7 +365,6 @@ DIR *opendir(const char *argpath)
 	if(!whiteout_check(path)) 
 		goto cleanup;
 
-	strncat(cachepath,path,sizeof(cachepath)-1);
 
 	if(!io_on_off)
 		goto miss;
